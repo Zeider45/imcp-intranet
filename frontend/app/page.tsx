@@ -27,7 +27,7 @@ export default function Home() {
           setWelcomeData(welcomeResult.data || null);
           setHealthData(healthResult.data || null);
         }
-      } catch (err) {
+      } catch {
         setError('Error connecting to backend');
       } finally {
         setLoading(false);
@@ -150,6 +150,55 @@ export default function Home() {
                     <span>CORS configurado</span>
                   </li>
                 </ul>
+              </div>
+
+              {/* Quick Links to Modules */}
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                  📚 Módulos Disponibles
+                </h2>
+                <div className="grid md:grid-cols-2 gap-3">
+                  <a
+                    href="/departments"
+                    className="flex items-center gap-3 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                  >
+                    <span className="text-2xl">🏢</span>
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-white">Departamentos</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Estructura organizacional</p>
+                    </div>
+                  </a>
+                  <a
+                    href="/profiles"
+                    className="flex items-center gap-3 p-4 rounded-lg bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                  >
+                    <span className="text-2xl">👥</span>
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-white">Perfiles</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Directorio de empleados</p>
+                    </div>
+                  </a>
+                  <a
+                    href="/announcements"
+                    className="flex items-center gap-3 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
+                  >
+                    <span className="text-2xl">📢</span>
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-white">Anuncios</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Comunicados importantes</p>
+                    </div>
+                  </a>
+                  <a
+                    href="/documents"
+                    className="flex items-center gap-3 p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
+                  >
+                    <span className="text-2xl">📄</span>
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-white">Documentos</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Repositorio de archivos</p>
+                    </div>
+                  </a>
+                </div>
               </div>
             </div>
           )}
