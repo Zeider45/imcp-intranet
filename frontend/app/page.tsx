@@ -157,47 +157,200 @@ export default function Home() {
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                   📚 Módulos Disponibles
                 </h2>
-                <div className="grid md:grid-cols-2 gap-3">
-                  <a
-                    href="/departments"
-                    className="flex items-center gap-3 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-                  >
-                    <span className="text-2xl">🏢</span>
-                    <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">Departamentos</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Estructura organizacional</p>
-                    </div>
-                  </a>
-                  <a
-                    href="/profiles"
-                    className="flex items-center gap-3 p-4 rounded-lg bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
-                  >
-                    <span className="text-2xl">👥</span>
-                    <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">Perfiles</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Directorio de empleados</p>
-                    </div>
-                  </a>
-                  <a
-                    href="/announcements"
-                    className="flex items-center gap-3 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
-                  >
-                    <span className="text-2xl">📢</span>
-                    <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">Anuncios</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Comunicados importantes</p>
-                    </div>
-                  </a>
-                  <a
-                    href="/documents"
-                    className="flex items-center gap-3 p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
-                  >
-                    <span className="text-2xl">📄</span>
-                    <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">Documentos</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Repositorio de archivos</p>
-                    </div>
-                  </a>
+                
+                {/* Core Modules */}
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3 uppercase tracking-wide">
+                    Módulos Principales
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <a
+                      href="/departments"
+                      className="flex items-center gap-3 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                    >
+                      <span className="text-2xl">🏢</span>
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">Departamentos</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Estructura organizacional</p>
+                      </div>
+                    </a>
+                    <a
+                      href="/profiles"
+                      className="flex items-center gap-3 p-4 rounded-lg bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                    >
+                      <span className="text-2xl">👥</span>
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">Perfiles</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Directorio de empleados</p>
+                      </div>
+                    </a>
+                    <a
+                      href="/announcements"
+                      className="flex items-center gap-3 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
+                    >
+                      <span className="text-2xl">📢</span>
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">Anuncios</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Comunicados importantes</p>
+                      </div>
+                    </a>
+                    <a
+                      href="/documents"
+                      className="flex items-center gap-3 p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
+                    >
+                      <span className="text-2xl">📄</span>
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">Documentos</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Repositorio de archivos</p>
+                      </div>
+                    </a>
+                  </div>
+                </div>
+
+                {/* Time and Resource Management */}
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3 uppercase tracking-wide">
+                    📅 Gestión del Tiempo y Recursos
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <a
+                      href="/calendar"
+                      className="flex items-center gap-3 p-4 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                    >
+                      <span className="text-2xl">📅</span>
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">Calendario</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Eventos corporativos</p>
+                      </div>
+                    </a>
+                    <a
+                      href="/leave-requests"
+                      className="flex items-center gap-3 p-4 rounded-lg bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors"
+                    >
+                      <span className="text-2xl">🏖️</span>
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">Solicitudes</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Vacaciones y permisos</p>
+                      </div>
+                    </a>
+                    <a
+                      href="/resources"
+                      className="flex items-center gap-3 p-4 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 hover:bg-cyan-100 dark:hover:bg-cyan-900/30 transition-colors"
+                    >
+                      <span className="text-2xl">🔧</span>
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">Recursos</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Salas y equipos</p>
+                      </div>
+                    </a>
+                  </div>
+                </div>
+
+                {/* Training and Development */}
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3 uppercase tracking-wide">
+                    📚 Formación y Desarrollo
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <a
+                      href="/courses"
+                      className="flex items-center gap-3 p-4 rounded-lg bg-violet-50 dark:bg-violet-900/20 hover:bg-violet-100 dark:hover:bg-violet-900/30 transition-colors"
+                    >
+                      <span className="text-2xl">🎓</span>
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">Cursos</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Sistema de formación</p>
+                      </div>
+                    </a>
+                    <a
+                      href="/knowledge"
+                      className="flex items-center gap-3 p-4 rounded-lg bg-pink-50 dark:bg-pink-900/20 hover:bg-pink-100 dark:hover:bg-pink-900/30 transition-colors"
+                    >
+                      <span className="text-2xl">💡</span>
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">Conocimiento</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Base de conocimientos</p>
+                      </div>
+                    </a>
+                  </div>
+                </div>
+
+                {/* Interaction and Collaboration */}
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3 uppercase tracking-wide">
+                    💬 Interacción y Colaboración
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <a
+                      href="/forums"
+                      className="flex items-center gap-3 p-4 rounded-lg bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
+                    >
+                      <span className="text-2xl">💬</span>
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">Foros</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Discusiones y grupos</p>
+                      </div>
+                    </a>
+                    <a
+                      href="/suggestions"
+                      className="flex items-center gap-3 p-4 rounded-lg bg-lime-50 dark:bg-lime-900/20 hover:bg-lime-100 dark:hover:bg-lime-900/30 transition-colors"
+                    >
+                      <span className="text-2xl">💡</span>
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">Sugerencias</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Buzón de ideas</p>
+                      </div>
+                    </a>
+                  </div>
+                </div>
+
+                {/* Tools and Data */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3 uppercase tracking-wide">
+                    📊 Herramientas y Datos
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <a
+                      href="/kpis"
+                      className="flex items-center gap-3 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                    >
+                      <span className="text-2xl">📊</span>
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">KPIs</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Indicadores clave</p>
+                      </div>
+                    </a>
+                    <a
+                      href="/quick-links"
+                      className="flex items-center gap-3 p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
+                    >
+                      <span className="text-2xl">🔗</span>
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">Enlaces</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Accesos directos</p>
+                      </div>
+                    </a>
+                    <a
+                      href="/projects"
+                      className="flex items-center gap-3 p-4 rounded-lg bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/30 transition-colors"
+                    >
+                      <span className="text-2xl">📋</span>
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">Proyectos</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Gestión de proyectos</p>
+                      </div>
+                    </a>
+                    <a
+                      href="/tasks"
+                      className="flex items-center gap-3 p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                    >
+                      <span className="text-2xl">✅</span>
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">Tareas</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Gestión de tareas</p>
+                      </div>
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
