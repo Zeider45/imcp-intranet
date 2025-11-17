@@ -6,6 +6,15 @@ This guide explains how to configure the Django backend to authenticate users ag
 
 The backend is configured to support LDAP/Active Directory authentication using `django-python3-ldap`, which provides pure Python LDAP authentication without requiring native LDAP libraries. The system falls back to standard Django authentication when LDAP is not configured.
 
+**Key Features:**
+- ✅ User authentication via Active Directory
+- ✅ Automatic group synchronization from AD to Django
+- ✅ Role-based authorization using AD groups
+- ✅ Support for both English and Spanish group names
+- ✅ Automatic user profile creation
+
+> **Note:** For detailed information about role-based authorization and permissions, see [ROLE_BASED_AUTHORIZATION.md](ROLE_BASED_AUTHORIZATION.md)
+
 ## Prerequisites
 
 The required packages are already included in `requirements.txt`:

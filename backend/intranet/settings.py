@@ -252,6 +252,14 @@ elif HAS_DJANGO_PYTHON3_LDAP and AUTH_LDAP_SERVER_URI:
         'last_name': os.environ.get('AUTH_LDAP_ATTR_LAST_NAME', 'sn'),
         'email': os.environ.get('AUTH_LDAP_ATTR_EMAIL', 'mail'),
     }
+    
+    # Sync AD groups to Django groups
+    LDAP_AUTH_SYNC_USER_RELATIONS = 'api.ldap_sync.sync_user_relations'
+    LDAP_AUTH_CLEAN_USER_DATA = 'api.ldap_sync.clean_user_data'
+    
+    # Format LDAP groups (memberOf attribute)
+    LDAP_AUTH_FORMAT_SEARCH_FILTERS = 'api.ldap_sync.format_search_filters'
+    LDAP_AUTH_FORMAT_USERNAME = 'django_python3_ldap.utils.format_username_openldap'
 
     # Authentication backend provided by django-python3-ldap
     AUTHENTICATION_BACKENDS = [

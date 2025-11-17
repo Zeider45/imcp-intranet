@@ -5,6 +5,19 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate, login, logout
 from django_filters.rest_framework import DjangoFilterBackend
+from .permissions import (
+    IsAdminOrReadOnly,
+    IsDepartmentManager,
+    IsHRManager,
+    CanManageAnnouncements,
+    CanManageDocuments,
+    CanApproveLeaveRequests,
+    CanManageResources,
+    CanManageCourses,
+    CanManageProjects,
+    IsOwnerOrReadOnly,
+    IsOwnerOrManager
+)
 from .models import (
     Department, UserProfile, Announcement, Document,
     CalendarEvent, LeaveRequest, Resource, ResourceReservation,
@@ -97,6 +110,9 @@ def ldap_login(request):
         except UserProfile.DoesNotExist:
             profile_data = None
         
+        # Get user groups for role-based authorization
+        user_groups = list(user.groups.values_list('name', flat=True))
+        
         return Response({
             'success': True,
             'message': 'Authentication successful',
@@ -108,6 +124,7 @@ def ldap_login(request):
                 'last_name': user.last_name,
                 'is_staff': user.is_staff,
                 'is_superuser': user.is_superuser,
+                'groups': user_groups,
             },
             'profile': profile_data,
             'token': token.key,
@@ -162,6 +179,9 @@ def current_user(request):
         except UserProfile.DoesNotExist:
             profile_data = None
         
+        # Get user groups for role-based authorization
+        user_groups = list(request.user.groups.values_list('name', flat=True))
+        
         return Response({
             'authenticated': True,
             'user': {
@@ -172,6 +192,7 @@ def current_user(request):
                 'last_name': request.user.last_name,
                 'is_staff': request.user.is_staff,
                 'is_superuser': request.user.is_superuser,
+                'groups': user_groups,
             },
             'profile': profile_data,
         }, status=status.HTTP_200_OK)
@@ -186,10 +207,11 @@ class DepartmentViewSet(viewsets.ModelViewSet):
     """
     ViewSet for Department model
     Provides CRUD operations for departments
+    Permissions: Authenticated users can view, only HR/Department Managers can modify
     """
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsDepartmentManager | IsHRManager]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'description']
     ordering_fields = ['name', 'created_at']
@@ -200,10 +222,11 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     """
     ViewSet for UserProfile model
     Provides CRUD operations for user profiles
+    Permissions: Authenticated users can view, only HR Managers can create/modify others
     """
     queryset = UserProfile.objects.select_related('user', 'department').all()
     serializer_class = UserProfileSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsOwnerOrManager]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['department', 'user__is_active']
     search_fields = ['user__username', 'user__first_name', 'user__last_name', 'position']
@@ -227,10 +250,11 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
     """
     ViewSet for Announcement model
     Provides CRUD operations for announcements
+    Permissions: All can view, Communications/Managers can create/edit
     """
     queryset = Announcement.objects.select_related('author').all()
     serializer_class = AnnouncementSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [CanManageAnnouncements]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['priority', 'is_active', 'author']
     search_fields = ['title', 'content']
@@ -253,10 +277,11 @@ class DocumentViewSet(viewsets.ModelViewSet):
     """
     ViewSet for Document model
     Provides CRUD operations for documents
+    Permissions: All can view, Document Managers can upload/modify
     """
     queryset = Document.objects.select_related('uploaded_by', 'department').all()
     serializer_class = DocumentSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [CanManageDocuments]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['category', 'department', 'uploaded_by']
     search_fields = ['title', 'description']
@@ -276,10 +301,13 @@ class DocumentViewSet(viewsets.ModelViewSet):
 # ========================================
 
 class CalendarEventViewSet(viewsets.ModelViewSet):
-    """ViewSet for CalendarEvent model"""
+    """
+    ViewSet for CalendarEvent model
+    Permissions: All can view, owner and managers can modify
+    """
     queryset = CalendarEvent.objects.select_related('created_by').prefetch_related('attendees').all()
     serializer_class = CalendarEventSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsOwnerOrManager]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['event_type', 'created_by', 'all_day']
     search_fields = ['title', 'description', 'location']
@@ -296,10 +324,13 @@ class CalendarEventViewSet(viewsets.ModelViewSet):
 
 
 class LeaveRequestViewSet(viewsets.ModelViewSet):
-    """ViewSet for LeaveRequest model"""
+    """
+    ViewSet for LeaveRequest model
+    Permissions: Employees can create, HR/Managers can approve
+    """
     queryset = LeaveRequest.objects.select_related('employee', 'approver').all()
     serializer_class = LeaveRequestSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [CanApproveLeaveRequests]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'leave_type', 'employee', 'approver']
     search_fields = ['employee__username', 'employee__first_name', 'employee__last_name', 'reason']
@@ -345,10 +376,13 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
 
 
 class ResourceViewSet(viewsets.ModelViewSet):
-    """ViewSet for Resource model"""
+    """
+    ViewSet for Resource model
+    Permissions: All can view, Resource Managers can create/modify
+    """
     queryset = Resource.objects.all()
     serializer_class = ResourceSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [CanManageResources]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['resource_type', 'is_available']
     search_fields = ['name', 'description', 'location']
@@ -368,10 +402,13 @@ class ResourceViewSet(viewsets.ModelViewSet):
 
 
 class ResourceReservationViewSet(viewsets.ModelViewSet):
-    """ViewSet for ResourceReservation model"""
+    """
+    ViewSet for ResourceReservation model
+    Permissions: All authenticated users can reserve, owner can modify their reservations
+    """
     queryset = ResourceReservation.objects.select_related('resource', 'user').all()
     serializer_class = ResourceReservationSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsOwnerOrManager]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'resource', 'user']
     search_fields = ['resource__name', 'user__username', 'purpose']
@@ -384,10 +421,13 @@ class ResourceReservationViewSet(viewsets.ModelViewSet):
 # ========================================
 
 class CourseViewSet(viewsets.ModelViewSet):
-    """ViewSet for Course model"""
+    """
+    ViewSet for Course model
+    Permissions: All can view, Training Managers can create/modify
+    """
     queryset = Course.objects.select_related('instructor', 'department').all()
     serializer_class = CourseSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [CanManageCourses]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'is_mandatory', 'department', 'instructor']
     search_fields = ['title', 'description']
@@ -407,10 +447,13 @@ class CourseViewSet(viewsets.ModelViewSet):
 
 
 class CourseEnrollmentViewSet(viewsets.ModelViewSet):
-    """ViewSet for CourseEnrollment model"""
+    """
+    ViewSet for CourseEnrollment model
+    Permissions: Students can enroll, owners can view their enrollments
+    """
     queryset = CourseEnrollment.objects.select_related('course', 'student').all()
     serializer_class = CourseEnrollmentSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsOwnerOrManager]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'course', 'student', 'certificate_issued']
     search_fields = ['course__title', 'student__username']
@@ -419,10 +462,13 @@ class CourseEnrollmentViewSet(viewsets.ModelViewSet):
 
 
 class KnowledgeArticleViewSet(viewsets.ModelViewSet):
-    """ViewSet for KnowledgeArticle model"""
+    """
+    ViewSet for KnowledgeArticle model
+    Permissions: All can view, author and managers can modify
+    """
     queryset = KnowledgeArticle.objects.select_related('author', 'department').all()
     serializer_class = KnowledgeArticleSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsOwnerOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['category', 'is_published', 'department', 'author']
     search_fields = ['title', 'content', 'tags']
@@ -451,10 +497,13 @@ class KnowledgeArticleViewSet(viewsets.ModelViewSet):
 # ========================================
 
 class ForumCategoryViewSet(viewsets.ModelViewSet):
-    """ViewSet for ForumCategory model"""
+    """
+    ViewSet for ForumCategory model
+    Permissions: All can view, managers can create/modify
+    """
     queryset = ForumCategory.objects.all()
     serializer_class = ForumCategorySerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'description']
     ordering_fields = ['name', 'created_at']
@@ -462,10 +511,13 @@ class ForumCategoryViewSet(viewsets.ModelViewSet):
 
 
 class ForumPostViewSet(viewsets.ModelViewSet):
-    """ViewSet for ForumPost model"""
+    """
+    ViewSet for ForumPost model
+    Permissions: All can view and post, owner can modify their posts
+    """
     queryset = ForumPost.objects.select_related('category', 'author', 'parent_post').all()
     serializer_class = ForumPostSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsOwnerOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['category', 'author', 'is_pinned', 'is_locked', 'parent_post']
     search_fields = ['title', 'content']
@@ -483,10 +535,13 @@ class ForumPostViewSet(viewsets.ModelViewSet):
 
 
 class SuggestionViewSet(viewsets.ModelViewSet):
-    """ViewSet for Suggestion model"""
+    """
+    ViewSet for Suggestion model
+    Permissions: All can create suggestions, managers can review
+    """
     queryset = Suggestion.objects.select_related('author', 'reviewer').all()
     serializer_class = SuggestionSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsOwnerOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'is_anonymous', 'category', 'author', 'reviewer']
     search_fields = ['title', 'description']
@@ -508,10 +563,13 @@ class SuggestionViewSet(viewsets.ModelViewSet):
 # ========================================
 
 class KPIDashboardViewSet(viewsets.ModelViewSet):
-    """ViewSet for KPIDashboard model"""
+    """
+    ViewSet for KPIDashboard model
+    Permissions: All can view, managers can create/modify
+    """
     queryset = KPIDashboard.objects.select_related('department').all()
     serializer_class = KPIDashboardSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsDepartmentManager | IsHRManager]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['department', 'is_active', 'period']
     search_fields = ['name', 'metric_name', 'description']
@@ -531,10 +589,13 @@ class KPIDashboardViewSet(viewsets.ModelViewSet):
 
 
 class QuickLinkViewSet(viewsets.ModelViewSet):
-    """ViewSet for QuickLink model"""
+    """
+    ViewSet for QuickLink model
+    Permissions: All can view, admins can create/modify
+    """
     queryset = QuickLink.objects.select_related('department').all()
     serializer_class = QuickLinkSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['category', 'is_active', 'department']
     search_fields = ['title', 'description']
@@ -550,10 +611,13 @@ class QuickLinkViewSet(viewsets.ModelViewSet):
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
-    """ViewSet for Project model"""
+    """
+    ViewSet for Project model
+    Permissions: All can view, Project Managers can create/modify
+    """
     queryset = Project.objects.select_related('project_manager', 'department').prefetch_related('team_members').all()
     serializer_class = ProjectSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [CanManageProjects]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'priority', 'project_manager', 'department']
     search_fields = ['name', 'description']
@@ -573,10 +637,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
 
 class TaskViewSet(viewsets.ModelViewSet):
-    """ViewSet for Task model"""
+    """
+    ViewSet for Task model
+    Permissions: All can view, assigned user and project manager can modify
+    """
     queryset = Task.objects.select_related('project', 'assigned_to', 'created_by').all()
     serializer_class = TaskSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsOwnerOrManager]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'priority', 'project', 'assigned_to', 'created_by']
     search_fields = ['title', 'description']

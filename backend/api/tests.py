@@ -184,16 +184,24 @@ class APIEndpointsTest(TestCase):
     """Test cases for API endpoints"""
     
     def setUp(self):
+        from django.contrib.auth.models import Group
         self.client = APIClient()
         self.user = User.objects.create_user(
             username="testuser",
             email="test@example.com",
             password="testpass123"
         )
+        # Add user to HR_Managers group so they can create departments
+        hr_group = Group.objects.create(name='HR_Managers')
+        self.user.groups.add(hr_group)
+        
         self.department = Department.objects.create(
             name="Test Department",
             description="Test Description"
         )
+        
+        # Authenticate the client
+        self.client.force_authenticate(user=self.user)
     
     def test_health_check_endpoint(self):
         """Test health check endpoint"""
