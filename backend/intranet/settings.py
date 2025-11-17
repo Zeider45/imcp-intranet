@@ -12,10 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
+from dotenv import load_dotenv, find_dotenv
 
 # Try to detect available LDAP backends/packages. We prefer django-auth-ldap if
 # installed (it requires python-ldap), otherwise fall back to django-python3-ldap
@@ -45,6 +42,16 @@ except Exception:
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from the project's .env located at BASE_DIR
+# Prefer an explicit .env in the backend folder so variables are found even
+# if the process is started from a different working directory.
+env_path = BASE_DIR / '.env'
+if env_path.exists():
+    load_dotenv(env_path)
+else:
+    # Fallback to any .env found on the filesystem (optional)
+    load_dotenv(find_dotenv())
 
 
 # Quick-start development settings - unsuitable for production
