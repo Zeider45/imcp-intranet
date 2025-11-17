@@ -58,17 +58,23 @@ source venv/bin/activate  # En Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Ejecutar migraciones:
+4. Configurar variables de entorno:
+```bash
+cp .env.example .env
+# Editar .env con tus configuraciones específicas
+```
+
+5. Ejecutar migraciones:
 ```bash
 python manage.py migrate
 ```
 
-5. Crear un superusuario (opcional):
+6. Crear un superusuario (opcional):
 ```bash
 python manage.py createsuperuser
 ```
 
-6. Iniciar el servidor de desarrollo:
+7. Iniciar el servidor de desarrollo:
 ```bash
 python manage.py runserver
 ```
@@ -87,7 +93,13 @@ cd frontend
 npm install
 ```
 
-3. Iniciar el servidor de desarrollo:
+3. Configurar variables de entorno:
+```bash
+cp .env.example .env.local
+# Editar .env.local con tus configuraciones específicas
+```
+
+4. Iniciar el servidor de desarrollo:
 ```bash
 npm run dev
 ```
@@ -195,14 +207,29 @@ gunicorn intranet.wsgi:application
 
 ### Variables de Entorno
 
-#### Frontend (.env.local)
-```
-NEXT_PUBLIC_API_URL=http://localhost:8000
+El proyecto utiliza archivos `.env` para gestionar las variables de entorno. Se proporcionan archivos de ejemplo (`.env.example`) que debes copiar y configurar.
+
+#### Backend (.env)
+```bash
+cd backend
+cp .env.example .env
 ```
 
-#### Backend
-- Editar `backend/intranet/settings.py` para configuración adicional
-- Para producción, usar variables de entorno para `SECRET_KEY`, `DEBUG`, etc.
+Variables disponibles:
+- `SECRET_KEY`: Clave secreta de Django (cambiar en producción)
+- `DEBUG`: Modo debug (True/False)
+- `ALLOWED_HOSTS`: Hosts permitidos (separados por comas)
+- `CORS_ALLOWED_ORIGINS`: Orígenes CORS permitidos (separados por comas)
+- Variables LDAP/Active Directory (opcionales)
+
+#### Frontend (.env.local)
+```bash
+cd frontend
+cp .env.example .env.local
+```
+
+Variables disponibles:
+- `NEXT_PUBLIC_API_URL`: URL del backend API (por defecto: http://localhost:8000)
 
 ### Autenticación con Active Directory
 
