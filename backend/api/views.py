@@ -2,6 +2,8 @@ from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from rest_framework import status, viewsets, filters
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import authenticate, login, logout
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import (
     Department, UserProfile, Announcement, Document,
@@ -56,6 +58,128 @@ def welcome(request):
         'version': '1.0.0',
         'description': 'Sistema de intranet con Django y Next.js'
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def ldap_login(request):
+    """
+    Authenticate user via Active Directory/LDAP
+    Expects: username, password
+    Returns: user info and authentication token
+    """
+    username = request.data.get('username')
+    password = request.data.get('password')
+    
+    if not username or not password:
+        return Response(
+            {'error': 'Username and password are required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Authenticate against configured backends (including LDAP)
+    user = authenticate(request, username=username, password=password)
+    
+    if user is not None:
+        # User authenticated successfully
+        login(request, user)
+        
+        # Get or create auth token
+        token, _ = Token.objects.get_or_create(user=user)
+        
+        # Get user profile if exists
+        try:
+            profile = UserProfile.objects.select_related('department').get(user=user)
+            profile_data = {
+                'department': profile.department.name if profile.department else None,
+                'position': profile.position,
+                'phone': profile.phone,
+            }
+        except UserProfile.DoesNotExist:
+            profile_data = None
+        
+        return Response({
+            'success': True,
+            'message': 'Authentication successful',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'is_staff': user.is_staff,
+                'is_superuser': user.is_superuser,
+            },
+            'profile': profile_data,
+            'token': token.key,
+        }, status=status.HTTP_200_OK)
+    else:
+        # Authentication failed
+        return Response(
+            {'error': 'Invalid credentials'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
+
+@api_view(['POST'])
+def ldap_logout(request):
+    """
+    Logout current user
+    """
+    if request.user.is_authenticated:
+        # Delete auth token if exists
+        try:
+            request.user.auth_token.delete()
+        except Exception:
+            pass
+        
+        logout(request)
+        return Response({
+            'success': True,
+            'message': 'Logout successful'
+        }, status=status.HTTP_200_OK)
+    else:
+        return Response(
+            {'error': 'No active session'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+@api_view(['GET'])
+def current_user(request):
+    """
+    Get current authenticated user information
+    """
+    if request.user.is_authenticated:
+        # Get user profile if exists
+        try:
+            profile = UserProfile.objects.select_related('department').get(user=request.user)
+            profile_data = {
+                'department': profile.department.name if profile.department else None,
+                'position': profile.position,
+                'phone': profile.phone,
+                'bio': profile.bio,
+            }
+        except UserProfile.DoesNotExist:
+            profile_data = None
+        
+        return Response({
+            'authenticated': True,
+            'user': {
+                'id': request.user.id,
+                'username': request.user.username,
+                'email': request.user.email,
+                'first_name': request.user.first_name,
+                'last_name': request.user.last_name,
+                'is_staff': request.user.is_staff,
+                'is_superuser': request.user.is_superuser,
+            },
+            'profile': profile_data,
+        }, status=status.HTTP_200_OK)
+    else:
+        return Response(
+            {'authenticated': False},
+            status=status.HTTP_200_OK
+        )
 
 
 class DepartmentViewSet(viewsets.ModelViewSet):

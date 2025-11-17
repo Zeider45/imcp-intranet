@@ -115,6 +115,31 @@ Respuesta:
 }
 ```
 
+#### Autenticación
+
+**Login (soporta Active Directory/LDAP)**
+```
+POST /api/auth/login/
+Content-Type: application/json
+
+{
+  "username": "usuario",
+  "password": "contraseña"
+}
+```
+
+**Usuario Actual**
+```
+GET /api/auth/me/
+Authorization: Token <token>
+```
+
+**Logout**
+```
+POST /api/auth/logout/
+Authorization: Token <token>
+```
+
 #### Welcome
 ```
 GET /api/welcome/
@@ -178,6 +203,19 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 #### Backend
 - Editar `backend/intranet/settings.py` para configuración adicional
 - Para producción, usar variables de entorno para `SECRET_KEY`, `DEBUG`, etc.
+
+### Autenticación con Active Directory
+
+El backend está configurado para soportar autenticación con Active Directory/LDAP. Ver la guía completa en:
+- **[backend/ACTIVE_DIRECTORY_SETUP.md](backend/ACTIVE_DIRECTORY_SETUP.md)**
+
+Para habilitar autenticación LDAP, configurar las siguientes variables de entorno:
+```bash
+export AUTH_LDAP_SERVER_URI=ldap://ad.example.com:389
+export AUTH_LDAP_BIND_DN=CN=ServiceAccount,DC=example,DC=com
+export AUTH_LDAP_BIND_PASSWORD=password
+export AUTH_LDAP_USER_SEARCH_BASE=DC=example,DC=com
+```
 
 ## 📝 Características
 

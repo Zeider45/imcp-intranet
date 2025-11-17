@@ -38,12 +38,12 @@ class UserProfileModelTest(TestCase):
             last_name="User"
         )
         self.department = Department.objects.create(name="IT Department")
-        self.profile = UserProfile.objects.create(
-            user=self.user,
-            department=self.department,
-            phone="123-456-7890",
-            position="Developer"
-        )
+        # Profile is automatically created by signal, just update it
+        self.profile = UserProfile.objects.get(user=self.user)
+        self.profile.department = self.department
+        self.profile.phone = "123-456-7890"
+        self.profile.position = "Developer"
+        self.profile.save()
     
     def test_profile_creation(self):
         """Test user profile is created correctly"""
@@ -89,6 +89,95 @@ class DocumentModelTest(TestCase):
             uploaded_by=self.user
         )
         self.assertEqual(str(document), "Test Document")
+
+
+class AuthenticationEndpointsTest(TestCase):
+    """Test cases for authentication endpoints"""
+    
+    @classmethod
+    def setUpClass(cls):
+        """Override authentication backends for testing"""
+        super().setUpClass()
+        from django.conf import settings
+        # Only use ModelBackend for tests to avoid LDAP connection attempts
+        cls._original_auth_backends = settings.AUTHENTICATION_BACKENDS
+        settings.AUTHENTICATION_BACKENDS = [
+            'django.contrib.auth.backends.ModelBackend',
+        ]
+    
+    @classmethod
+    def tearDownClass(cls):
+        """Restore original authentication backends"""
+        from django.conf import settings
+        settings.AUTHENTICATION_BACKENDS = cls._original_auth_backends
+        super().tearDownClass()
+    
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username="ldapuser",
+            email="ldapuser@example.com",
+            password="ldappass123",
+            first_name="LDAP",
+            last_name="User"
+        )
+        self.department = Department.objects.create(name="IT Department")
+        # Profile is automatically created by signal, just update it
+        self.profile = UserProfile.objects.get(user=self.user)
+        self.profile.department = self.department
+        self.profile.position = "Developer"
+        self.profile.phone = "555-1234"
+        self.profile.save()
+    
+    def test_login_success(self):
+        """Test successful login with valid credentials"""
+        response = self.client.post('/api/auth/login/', {
+            'username': 'ldapuser',
+            'password': 'ldappass123'
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['success'])
+        self.assertIn('token', response.data)
+        self.assertIn('user', response.data)
+        self.assertEqual(response.data['user']['username'], 'ldapuser')
+    
+    def test_login_invalid_credentials(self):
+        """Test login with invalid credentials"""
+        response = self.client.post('/api/auth/login/', {
+            'username': 'ldapuser',
+            'password': 'wrongpassword'
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn('error', response.data)
+    
+    def test_login_missing_credentials(self):
+        """Test login with missing credentials"""
+        response = self.client.post('/api/auth/login/', {
+            'username': 'ldapuser'
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    
+    def test_current_user_authenticated(self):
+        """Test getting current user when authenticated"""
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get('/api/auth/me/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['authenticated'])
+        self.assertEqual(response.data['user']['username'], 'ldapuser')
+        self.assertIsNotNone(response.data['profile'])
+    
+    def test_current_user_not_authenticated(self):
+        """Test getting current user when not authenticated"""
+        response = self.client.get('/api/auth/me/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['authenticated'])
+    
+    def test_logout(self):
+        """Test logout functionality"""
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post('/api/auth/logout/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['success'])
 
 
 class APIEndpointsTest(TestCase):
