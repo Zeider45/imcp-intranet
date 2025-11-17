@@ -11,6 +11,33 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+
+# Try to detect available LDAP backends/packages. We prefer django-auth-ldap if
+# installed (it requires python-ldap), otherwise fall back to django-python3-ldap
+# which uses ldap3 (pure Python).
+ldap = None
+LDAPSearch = None
+HAS_DJANGO_AUTH_LDAP = False
+HAS_DJANGO_PYTHON3_LDAP = False
+try:
+    # django-auth-ldap path
+    import ldap as _ldap  # python-ldap
+    from django_auth_ldap.config import LDAPSearch as _LDAPSearch
+    ldap = _ldap
+    LDAPSearch = _LDAPSearch
+    HAS_DJANGO_AUTH_LDAP = True
+except Exception:
+    # django-auth-ldap not available or python-ldap missing
+    ldap = None
+    LDAPSearch = None
+    HAS_DJANGO_AUTH_LDAP = False
+
+try:
+    import django_python3_ldap  # type: ignore
+    HAS_DJANGO_PYTHON3_LDAP = True
+except Exception:
+    HAS_DJANGO_PYTHON3_LDAP = False
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -152,4 +179,87 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ],
 }
+
+
+# -----------------------------
+# Active Directory / LDAP
+# -----------------------------
+# The values below are read from environment variables so you can keep
+# credentials out of source control. Fill them in in your environment
+# or in a secure secrets manager before deploying.
+
+# Example env vars used:
+# AUTH_LDAP_SERVER_URI=ldap://ad.example.com
+# AUTH_LDAP_BIND_DN=CN=binduser,OU=Users,DC=example,DC=com
+# AUTH_LDAP_BIND_PASSWORD=supersecret
+# AUTH_LDAP_USER_SEARCH_BASE=DC=example,DC=com
+# AUTH_LDAP_USER_SEARCH_FILTER=(sAMAccountName=%(user)s)
+
+AUTH_LDAP_SERVER_URI = os.environ.get('AUTH_LDAP_SERVER_URI', '')
+AUTH_LDAP_BIND_DN = os.environ.get('AUTH_LDAP_BIND_DN', '')
+AUTH_LDAP_BIND_PASSWORD = os.environ.get('AUTH_LDAP_BIND_PASSWORD', '')
+
+# Configure depending on which LDAP integration package is installed.
+if HAS_DJANGO_AUTH_LDAP and LDAPSearch is not None and ldap is not None:
+    # django-auth-ldap configuration
+    AUTH_LDAP_SERVER_URI = os.environ.get('AUTH_LDAP_SERVER_URI', AUTH_LDAP_SERVER_URI)
+    AUTH_LDAP_BIND_DN = os.environ.get('AUTH_LDAP_BIND_DN', AUTH_LDAP_BIND_DN)
+    AUTH_LDAP_BIND_PASSWORD = os.environ.get('AUTH_LDAP_BIND_PASSWORD', AUTH_LDAP_BIND_PASSWORD)
+
+    AUTH_LDAP_USER_SEARCH = LDAPSearch(
+        os.environ.get('AUTH_LDAP_USER_SEARCH_BASE', ''),
+        ldap.SCOPE_SUBTREE,
+        os.environ.get('AUTH_LDAP_USER_SEARCH_FILTER', '(sAMAccountName=%(user)s)')
+    )
+
+    AUTH_LDAP_USER_ATTR_MAP = {
+        "first_name": os.environ.get('AUTH_LDAP_ATTR_FIRST_NAME', 'givenName'),
+        "last_name": os.environ.get('AUTH_LDAP_ATTR_LAST_NAME', 'sn'),
+        "email": os.environ.get('AUTH_LDAP_ATTR_EMAIL', 'mail'),
+    }
+
+    AUTH_LDAP_ALWAYS_UPDATE_USER = True
+
+    AUTHENTICATION_BACKENDS = [
+        'django_auth_ldap.backend.LDAPBackend',
+        'django.contrib.auth.backends.ModelBackend',
+    ]
+
+elif HAS_DJANGO_PYTHON3_LDAP:
+    # django-python3-ldap configuration (works with ldap3, pure Python)
+    # See: https://github.com/etianen/django-python3-ldap
+    LDAP_AUTH_URL = os.environ.get('AUTH_LDAP_SERVER_URI', '')
+    LDAP_AUTH_USE_TLS = os.environ.get('AUTH_LDAP_START_TLS', 'false').lower() in ('1', 'true', 'yes')
+    LDAP_AUTH_CONNECTION_USERNAME = os.environ.get('AUTH_LDAP_BIND_DN', '')
+    LDAP_AUTH_CONNECTION_PASSWORD = os.environ.get('AUTH_LDAP_BIND_PASSWORD', '')
+    LDAP_AUTH_SEARCH_BASE = os.environ.get('AUTH_LDAP_USER_SEARCH_BASE', '')
+    LDAP_AUTH_OBJECT_CLASS = os.environ.get('AUTH_LDAP_OBJECT_CLASS', 'person')
+
+    # Map Django user fields to LDAP attributes
+    LDAP_AUTH_USER_FIELDS = {
+        'first_name': os.environ.get('AUTH_LDAP_ATTR_FIRST_NAME', 'givenName'),
+        'last_name': os.environ.get('AUTH_LDAP_ATTR_LAST_NAME', 'sn'),
+        'email': os.environ.get('AUTH_LDAP_ATTR_EMAIL', 'mail'),
+    }
+
+    # Authentication backend provided by django-python3-ldap
+    AUTHENTICATION_BACKENDS = [
+        'django_python3_ldap.auth.LDAPBackend',
+        'django.contrib.auth.backends.ModelBackend',
+    ]
+
+else:
+    # No LDAP backend installed — fall back to default ModelBackend only
+    AUTHENTICATION_BACKENDS = [
+        'django.contrib.auth.backends.ModelBackend',
+    ]
+
+# Helpful flag: if you want to mirror LDAP groups into Django groups
+# AUTH_LDAP_MIRROR_GROUPS = True
+
+# Notes:
+# - Install `django-auth-ldap` and its dependencies (python-ldap) or use an
+#   alternative backend (ldap3) depending on your platform.
+# - Keep binder credentials secret and use a service account with read-only
+#   permissions on your directory.
 

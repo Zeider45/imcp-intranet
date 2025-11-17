@@ -1,107 +1,83 @@
-'use client';
+import { DepartmentCard } from "@/components/modules/departments/department-card";
+import { PageHeader } from "@/components/common/page-header";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
-import { useEffect, useState } from 'react';
-import { departmentApi, Department } from '@/lib/api';
-import { Card, CardHeader, CardTitle, CardContent, LoadingSpinner, ErrorMessage, Badge } from '@/components';
+const departments = [
+  {
+    id: 1,
+    name: "Recursos Humanos",
+    manager: "María García",
+    employees: 12,
+    email: "rh@imcp.com",
+    phone: "+52 55 1234 5678",
+    description: "Gestión de talento y desarrollo organizacional",
+  },
+  {
+    id: 2,
+    name: "Tecnología",
+    manager: "Carlos Mendoza",
+    employees: 24,
+    email: "ti@imcp.com",
+    phone: "+52 55 1234 5679",
+    description: "Infraestructura y desarrollo de sistemas",
+  },
+  {
+    id: 3,
+    name: "Finanzas",
+    manager: "Ana López",
+    employees: 18,
+    email: "finanzas@imcp.com",
+    phone: "+52 55 1234 5680",
+    description: "Contabilidad y planeación financiera",
+  },
+  {
+    id: 4,
+    name: "Marketing",
+    manager: "Roberto Sánchez",
+    employees: 15,
+    email: "marketing@imcp.com",
+    phone: "+52 55 1234 5681",
+    description: "Estrategia de marca y comunicación",
+  },
+  {
+    id: 5,
+    name: "Operaciones",
+    manager: "Laura Ramírez",
+    employees: 30,
+    email: "ops@imcp.com",
+    phone: "+52 55 1234 5682",
+    description: "Gestión de procesos y logística",
+  },
+  {
+    id: 6,
+    name: "Legal",
+    manager: "Miguel Torres",
+    employees: 8,
+    email: "legal@imcp.com",
+    phone: "+52 55 1234 5683",
+    description: "Asuntos legales y cumplimiento normativo",
+  },
+];
 
-export default function DepartmentsPage() {
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchDepartments = async () => {
-    setLoading(true);
-    setError(null);
-    
-    const result = await departmentApi.list();
-    
-    if (result.error) {
-      setError(result.error);
-    } else if (result.data) {
-      setDepartments(result.data.results);
-    }
-    
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    let mounted = true;
-    
-    const loadDepartments = async () => {
-      if (!mounted) return;
-      setLoading(true);
-      setError(null);
-      
-      const result = await departmentApi.list();
-      
-      if (!mounted) return;
-      
-      if (result.error) {
-        setError(result.error);
-      } else if (result.data) {
-        setDepartments(result.data.results);
-      }
-      
-      setLoading(false);
-    };
-
-    loadDepartments();
-    
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
+export default function DepartamentosPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            Departamentos
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Estructura organizacional de la empresa
-          </p>
-        </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Departamentos"
+        description="Estructura organizacional de IMCP"
+        action={
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Departamento
+          </Button>
+        }
+      />
 
-        {loading ? (
-          <LoadingSpinner message="Cargando departamentos..." />
-        ) : error ? (
-          <ErrorMessage
-            title="Error al cargar departamentos"
-            message={error}
-            onRetry={fetchDepartments}
-          />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {departments.map((department) => (
-              <Card key={department.id} hover>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>{department.name}</CardTitle>
-                    <Badge variant="info">
-                      {department.employee_count} empleados
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="mb-4">{department.description || 'Sin descripción'}</p>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    <p>Creado: {new Date(department.created_at).toLocaleDateString('es-ES')}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {!loading && !error && departments.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              No hay departamentos registrados
-            </p>
-          </div>
-        )}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {departments.map((dept) => (
+          <DepartmentCard key={dept.id} department={dept} />
+        ))}
       </div>
     </div>
   );
