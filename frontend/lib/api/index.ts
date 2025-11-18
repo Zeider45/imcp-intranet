@@ -1,6 +1,7 @@
 // Re-export modules for convenient imports
 export * from "./client";
 export * from "./types";
+export * from "./auth";
 export * from "./health";
 export * from "./departments";
 export * from "./profiles";

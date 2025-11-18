@@ -114,7 +114,7 @@ export function DashboardSidebar() {
                     )}
                     title={collapsed ? item.title : undefined}
                   >
-                    <Icon className="h-5 w-5 flex-shrink-0" />
+                    {Icon && <Icon className="h-5 w-5 flex-shrink-0" />}
                     {!collapsed && (
                       <>
                         <span className="flex-1">{item.title}</span>
