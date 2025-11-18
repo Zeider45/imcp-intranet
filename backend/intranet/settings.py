@@ -245,6 +245,11 @@ if HAS_DJANGO_AUTH_LDAP and LDAPSearch is not None and ldap is not None:
         'django.contrib.auth.backends.ModelBackend',
     ]
 
+    # backend/config/settings.py
+
+# Agregar después de las configuraciones LDAP existentes:
+    LDAP_AUTH_FORMAT_USERNAME = 'django_python3_ldap.utils.format_username_active_directory'
+
 elif HAS_DJANGO_PYTHON3_LDAP and AUTH_LDAP_SERVER_URI:
     # django-python3-ldap configuration (works with ldap3, pure Python)
     # See: https://github.com/etianen/django-python3-ldap
@@ -270,13 +275,16 @@ elif HAS_DJANGO_PYTHON3_LDAP and AUTH_LDAP_SERVER_URI:
     
     # Format LDAP groups (memberOf attribute)
     LDAP_AUTH_FORMAT_SEARCH_FILTERS = 'api.ldap_sync.format_search_filters'
-    LDAP_AUTH_FORMAT_USERNAME = 'django_python3_ldap.utils.format_username_openldap'
 
     # Authentication backend provided by django-python3-ldap
     AUTHENTICATION_BACKENDS = [
         'django_python3_ldap.auth.LDAPBackend',
         'django.contrib.auth.backends.ModelBackend',
     ]
+    # backend/config/settings.py
+
+# Agregar después de las configuraciones LDAP existentes:
+    LDAP_AUTH_FORMAT_USERNAME = 'django_python3_ldap.utils.format_username_active_directory'
 
 else:
     # No LDAP backend installed — fall back to default ModelBackend only
