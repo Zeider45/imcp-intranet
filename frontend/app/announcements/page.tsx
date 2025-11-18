@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react';
 import { announcementApi, Announcement } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent, LoadingSpinner, ErrorMessage, Badge } from '@/components';
 
-const priorityVariants: Record<string, 'default' | 'success' | 'warning' | 'danger'> = {
+const priorityVariants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   low: 'default',
-  normal: 'success',
-  high: 'warning',
-  urgent: 'danger',
+  normal: 'secondary',
+  high: 'outline',
+  urgent: 'destructive',
 };
 
 const priorityLabels: Record<string, string> = {
@@ -111,7 +111,7 @@ export default function AnnouncementsPage() {
                         {priorityLabels[announcement.priority]}
                       </Badge>
                       {announcement.is_active && (
-                        <Badge variant="success">Activo</Badge>
+                        <Badge variant="secondary">Activo</Badge>
                       )}
                     </div>
                   </div>
