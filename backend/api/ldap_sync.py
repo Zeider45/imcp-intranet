@@ -152,3 +152,25 @@ def format_search_filters(ldap_fields):
     # Note: This is handled by the LDAP library, but we can customize if needed
     
     return filters
+
+
+def format_username_active_directory(model, ldap_attributes):
+    """
+    Format username for Active Directory authentication.
+    Converts plain username to UPN format: username@domain
+    
+    Args:
+        model: Django User model instance
+        ldap_attributes: Dictionary of LDAP attributes from Active Directory
+        
+    Returns:
+        Username in UPN format (username@domain)
+    """
+    # Get username from LDAP attributes
+    username = ldap_attributes.get('sAMAccountName', [None])[0]
+    
+    if username:
+        # Convert to UPN format for AD bind
+        return f"{username}@imcp-intranet.local"
+    
+    return model.username
