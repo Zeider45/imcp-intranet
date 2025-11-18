@@ -24,18 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Load token from localStorage on mount
-  useEffect(() => {
-    const storedToken = localStorage.getItem("auth_token");
-    if (storedToken) {
-      setToken(storedToken);
-      checkAuthWithToken(storedToken);
-    } else {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const checkAuthWithToken = async (authToken: string) => {
+  const checkAuthWithToken = React.useCallback(async (authToken: string) => {
     setIsLoading(true);
     const response = await authApi.getCurrentUser(authToken);
     
@@ -50,7 +39,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
     }
     setIsLoading(false);
-  };
+  }, []);
+
+  // Load token from localStorage on mount
+  useEffect(() => {
+    const storedToken = localStorage.getItem("auth_token");
+    if (storedToken) {
+      setToken(storedToken);
+      checkAuthWithToken(storedToken);
+    } else {
+      setIsLoading(false);
+    }
+  }, [checkAuthWithToken]);
 
   const checkAuth = async () => {
     if (token) {

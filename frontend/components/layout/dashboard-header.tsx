@@ -13,16 +13,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth-context";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export function DashboardHeader() {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof document !== 'undefined') {
+      return document.documentElement.classList.contains("dark");
+    }
+    return false;
+  });
   const { user, logout } = useAuth();
-
-  useEffect(() => {
-    const isDarkMode = document.documentElement.classList.contains("dark");
-    setIsDark(isDarkMode);
-  }, []);
 
   const toggleTheme = () => {
     document.documentElement.classList.toggle("dark");
