@@ -3,6 +3,6 @@ djangorestframework==3.16.1
 django-cors-headers==4.9.0
 django-filter==25.2
 Pillow==11.1.0
-django-python3-ldap
-ldap3
+django-auth-ldap==5.0.0
+python-ldap==3.4.4
 python-dotenv==1.0.1

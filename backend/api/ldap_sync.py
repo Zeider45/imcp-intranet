@@ -1,8 +1,10 @@
 """
 LDAP sync functions for synchronizing Active Directory groups to Django groups.
+These functions are kept for backward compatibility and testing purposes.
+With django-auth-ldap, most of this functionality is handled automatically,
+but these functions can still be useful for custom group mappings.
 """
 from django.contrib.auth.models import Group
-from django_python3_ldap.utils import format_search_filters as default_format_search_filters
 import logging
 
 logger = logging.getLogger(__name__)
@@ -11,7 +13,11 @@ logger = logging.getLogger(__name__)
 def sync_user_relations(user, ldap_attributes):
     """
     Sync Active Directory groups to Django groups.
-    This function is called after user authentication to update group memberships.
+    This function can be used for custom group synchronization logic.
+    
+    Note: With django-auth-ldap, group synchronization is handled automatically
+    through AUTH_LDAP_MIRROR_GROUPS setting. This function is kept for
+    backward compatibility and custom group name mappings.
     
     Args:
         user: Django User object
@@ -96,6 +102,9 @@ def clean_user_data(user_data):
     """
     Clean and validate user data from LDAP before creating/updating Django user.
     
+    Note: With django-auth-ldap, user data cleaning is mostly handled automatically.
+    This function is kept for backward compatibility and custom data transformations.
+    
     Args:
         user_data: Dictionary of user data from LDAP
         
@@ -133,44 +142,3 @@ def clean_user_data(user_data):
     logger.info(f"Cleaned user data for: {user_data.get('username')}")
     
     return user_data
-
-
-def format_search_filters(ldap_fields):
-    """
-    Format LDAP search filters to include memberOf attribute for group sync.
-    
-    Args:
-        ldap_fields: Dictionary of LDAP field mappings
-        
-    Returns:
-        Formatted search filter string
-    """
-    # Get default filters
-    filters = default_format_search_filters(ldap_fields)
-    
-    # Ensure we request memberOf attribute for group synchronization
-    # Note: This is handled by the LDAP library, but we can customize if needed
-    
-    return filters
-
-
-def format_username_active_directory(model, ldap_attributes):
-    """
-    Format username for Active Directory authentication.
-    Converts plain username to UPN format: username@domain
-    
-    Args:
-        model: Django User model instance
-        ldap_attributes: Dictionary of LDAP attributes from Active Directory
-        
-    Returns:
-        Username in UPN format (username@domain)
-    """
-    # Get username from LDAP attributes
-    username = ldap_attributes.get('sAMAccountName', [None])[0]
-    
-    if username:
-        # Convert to UPN format for AD bind
-        return f"{username}@imcp-intranet.local"
-    
-    return model.username
