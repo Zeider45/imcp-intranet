@@ -1,6 +1,6 @@
-# ✅ Active Directory - Configuración Completada
+# ✅ Active Directory - Configuración Completada con django-auth-ldap
 
-El backend Django ha sido configurado exitosamente para autenticarse contra Active Directory.
+El backend Django ha sido configurado exitosamente para autenticarse contra Active Directory usando **django-auth-ldap**.
 
 ## 🎯 Resumen de la Configuración
 
@@ -11,13 +11,14 @@ El backend Django ha sido configurado exitosamente para autenticarse contra Acti
 - **Base DN:** DC=imcp-intranet,DC=local
 
 ### Características Habilitadas
-✅ Autenticación de usuarios via Active Directory  
+✅ Autenticación de usuarios via Active Directory usando **django-auth-ldap**  
 ✅ Sincronización automática de atributos de usuario (nombre, apellido, email)  
-✅ Sincronización automática de grupos AD → Django  
+✅ Sincronización automática de grupos AD → Django (con AUTH_LDAP_MIRROR_GROUPS)  
 ✅ Autorización basada en roles (role-based access control)  
-✅ Mapeo de grupos en español e inglés  
+✅ Mapeo de grupos en español e inglés (via ldap_sync.py)  
 ✅ Fallback a autenticación local Django  
 ✅ API REST para login/logout  
+✅ Biblioteca estándar y ampliamente soportada  
 
 ## 📁 Archivos Importantes
 
@@ -28,12 +29,14 @@ El backend Django ha sido configurado exitosamente para autenticarse contra Acti
 - `backend/.env.example` - Plantilla de configuración (sin contraseñas reales)
 - `backend/SETUP_INSTRUCTIONS.md` - Guía completa de uso y configuración
 - `backend/verify_ad_config.py` - Script para verificar la configuración
-- `backend/ACTIVE_DIRECTORY_SETUP.md` - Documentación detallada de AD/LDAP
+- `backend/test_django_auth_ldap.py` - **NUEVO**: Script para verificar django-auth-ldap
+- `backend/ACTIVE_DIRECTORY_SETUP.md` - Documentación detallada de AD/LDAP con django-auth-ldap
 - `backend/ROLE_BASED_AUTHORIZATION.md` - Documentación de permisos y roles
 
-### Archivos del Sistema (ya existían)
-- `backend/intranet/settings.py` - Configuración Django con soporte LDAP completo
-- `backend/api/ldap_sync.py` - Funciones de sincronización de usuarios y grupos
+### Archivos del Sistema
+- `backend/intranet/settings.py` - **ACTUALIZADO**: Configuración simplificada con django-auth-ldap
+- `backend/requirements.txt` - **ACTUALIZADO**: Usa django-auth-ldap==5.0.0 y python-ldap==3.4.4
+- `backend/api/ldap_sync.py` - Funciones auxiliares para mapeo de grupos personalizados
 - `backend/api/views.py` - Endpoints de autenticación (login/logout/me)
 - `backend/test_ldap_bind.py` - Script de prueba de conectividad LDAP
 

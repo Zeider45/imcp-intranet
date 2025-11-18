@@ -1,25 +1,41 @@
 # Active Directory / LDAP Configuration Guide
 
-This guide explains how to configure the Django backend to authenticate users against an Active Directory (AD) or LDAP server.
+This guide explains how to configure the Django backend to authenticate users against an Active Directory (AD) or LDAP server using **django-auth-ldap**.
 
 ## Overview
 
-The backend is configured to support LDAP/Active Directory authentication using `django-python3-ldap`, which provides pure Python LDAP authentication without requiring native LDAP libraries. The system falls back to standard Django authentication when LDAP is not configured.
+The backend is configured to support LDAP/Active Directory authentication using `django-auth-ldap`, the standard and widely-used LDAP authentication backend for Django. The system falls back to standard Django authentication when LDAP is not configured.
 
 **Key Features:**
 - ✅ User authentication via Active Directory
 - ✅ Automatic group synchronization from AD to Django
 - ✅ Role-based authorization using AD groups
-- ✅ Support for both English and Spanish group names
+- ✅ Support for both English and Spanish group names (via custom mapping)
 - ✅ Automatic user profile creation
+- ✅ Built-in group mirroring (AUTH_LDAP_MIRROR_GROUPS)
 
 > **Note:** For detailed information about role-based authorization and permissions, see [ROLE_BASED_AUTHORIZATION.md](ROLE_BASED_AUTHORIZATION.md)
 
 ## Prerequisites
 
 The required packages are already included in `requirements.txt`:
-- `django-python3-ldap` - Pure Python LDAP authentication backend
-- `ldap3` - Pure Python LDAP client library
+- `django-auth-ldap==5.0.0` - Standard Django LDAP authentication backend
+- `python-ldap==3.4.4` - Python LDAP library (requires system dependencies)
+
+### System Dependencies
+
+On Ubuntu/Debian, install the following system packages before installing `python-ldap`:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y libldap2-dev libsasl2-dev
+```
+
+On RHEL/CentOS:
+
+```bash
+sudo yum install python-devel openldap-devel
+```
 
 ## Configuration
 
@@ -48,42 +64,35 @@ AUTH_LDAP_USER_SEARCH_BASE=DC=example,DC=com
 #### Optional Variables
 
 ```bash
-# Start TLS (use with ldap://, not ldaps://)
-AUTH_LDAP_START_TLS=false
+# User Search Filter (default: sAMAccountName=%(user)s for Active Directory)
+AUTH_LDAP_USER_SEARCH_FILTER=(sAMAccountName=%(user)s)
 
-# Object class for user search (default: person)
-AUTH_LDAP_OBJECT_CLASS=person
-
-# LDAP Attribute Mappings (defaults shown)
-AUTH_LDAP_ATTR_USERNAME=sAMAccountName
-AUTH_LDAP_ATTR_FIRST_NAME=givenName
-AUTH_LDAP_ATTR_LAST_NAME=sn
-AUTH_LDAP_ATTR_EMAIL=mail
+# Note: User attribute mappings (first_name, last_name, email) are configured
+# in settings.py and map to standard AD attributes (givenName, sn, mail)
 ```
 
 ### Configuration Examples
 
-#### Example 1: Active Directory with Simple Bind
+#### Example 1: Active Directory (Simple - IMCP Intranet)
+
+```bash
+export AUTH_LDAP_SERVER_URI=ldap://172.16.101.106:389
+export AUTH_LDAP_BIND_DN=CN=administrator,CN=Users,DC=imcp-intranet,DC=local
+export AUTH_LDAP_BIND_PASSWORD=your_password_here
+export AUTH_LDAP_USER_SEARCH_BASE=DC=imcp-intranet,DC=local
+```
+
+#### Example 2: Generic Active Directory with Service Account
 
 ```bash
 export AUTH_LDAP_SERVER_URI=ldap://dc01.company.local:389
 export AUTH_LDAP_BIND_DN=CN=Django Service,OU=Service Accounts,DC=company,DC=local
 export AUTH_LDAP_BIND_PASSWORD=SecurePassword123
 export AUTH_LDAP_USER_SEARCH_BASE=DC=company,DC=local
-export AUTH_LDAP_OBJECT_CLASS=person
+export AUTH_LDAP_USER_SEARCH_FILTER=(sAMAccountName=%(user)s)
 ```
 
-#### Example 2: Active Directory with TLS
-
-```bash
-export AUTH_LDAP_SERVER_URI=ldap://dc01.company.local:389
-export AUTH_LDAP_START_TLS=true
-export AUTH_LDAP_BIND_DN=CN=Django Service,OU=Service Accounts,DC=company,DC=local
-export AUTH_LDAP_BIND_PASSWORD=SecurePassword123
-export AUTH_LDAP_USER_SEARCH_BASE=DC=company,DC=local
-```
-
-#### Example 3: Active Directory with LDAPS (Secure LDAP)
+#### Example 3: Active Directory with LDAPS (Secure LDAP - Recommended for Production)
 
 ```bash
 export AUTH_LDAP_SERVER_URI=ldaps://dc01.company.local:636
@@ -96,15 +105,26 @@ export AUTH_LDAP_USER_SEARCH_BASE=DC=company,DC=local
 
 1. User submits username and password to `/api/auth/login/`
 2. Django tries authentication backends in order:
-   - If LDAP is configured: `django_python3_ldap.auth.LDAPBackend`
+   - If LDAP is configured: `django_auth_ldap.backend.LDAPBackend`
    - Always tries: `django.contrib.auth.backends.ModelBackend`
-3. LDAP backend:
+3. LDAP backend (django-auth-ldap):
    - Connects to AD server using bind credentials
    - Searches for user by username (sAMAccountName by default)
    - Authenticates user with provided password
-   - Creates/updates Django user with LDAP attributes
+   - Creates/updates Django user with LDAP attributes (first_name, last_name, email)
+   - Synchronizes AD groups to Django groups (when AUTH_LDAP_MIRROR_GROUPS is enabled)
    - Creates UserProfile automatically via signal
-4. On success, returns user info and authentication token
+4. On success, returns user info, groups, and authentication token
+
+## Group Synchronization
+
+django-auth-ldap automatically synchronizes AD groups to Django groups when configured:
+
+- `AUTH_LDAP_MIRROR_GROUPS = True` - Creates Django groups that match AD group names
+- `AUTH_LDAP_GROUP_SEARCH` - Defines where to search for groups in AD
+- `AUTH_LDAP_FIND_GROUP_PERMS = True` - Enables group-based permissions
+
+Custom group name mappings (Spanish to English) are handled in `api/ldap_sync.py`.
 
 ## API Endpoints
 
