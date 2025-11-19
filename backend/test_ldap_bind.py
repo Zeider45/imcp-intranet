@@ -57,20 +57,26 @@ def try_bind(uri, bind_dn, password):
         tuple: (success, error_message, result_dict)
     """
     try:
+        # For LDAPS, configure TLS options globally BEFORE initializing
+        # This is required for SSL/TLS connections to work properly
+        if uri.startswith('ldaps://'):
+            # Set global TLS options
+            ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+            # For production, use proper certificate validation:
+            # ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
+            # ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, '/path/to/ca-cert.pem')
+        
         # Initialize LDAP connection
         conn = ldap.initialize(uri)
         
         # Set protocol version
         conn.protocol_version = ldap.VERSION3
         
-        # Set network timeout
+        # Set network timeout (important for detecting connection issues quickly)
         conn.set_option(ldap.OPT_NETWORK_TIMEOUT, 10.0)
         
-        # For LDAPS, you might need to configure certificate validation
-        if uri.startswith('ldaps://'):
-            # For testing, you can disable certificate verification
-            # In production, use proper certificate validation
-            conn.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+        # Disable referrals (recommended for Active Directory)
+        conn.set_option(ldap.OPT_REFERRALS, 0)
         
         # For plain LDAP (not LDAPS), try to use START_TLS for encryption
         # This helps with "Strong(er) authentication required" errors

@@ -284,7 +284,10 @@ If you see the error **"LDAP error: Strong(er) authentication required"**, this 
    ```bash
    AUTH_LDAP_SERVER_URI=ldaps://172.16.101.106:636
    ```
-   This uses LDAP over SSL/TLS on port 636.
+   This uses LDAP over SSL/TLS on port 636. The system is now configured to properly handle LDAPS connections:
+   - Global TLS options are set before initializing the connection
+   - Self-signed certificates are accepted by default (configurable for production)
+   - Network timeouts are configured for better error detection
 
 2. **Use START_TLS with plain LDAP (Automatic):**
    ```bash
@@ -296,9 +299,12 @@ If you see the error **"LDAP error: Strong(er) authentication required"**, this 
    In Active Directory, you can disable the requirement for signed/sealed LDAP, but this is NOT recommended for security reasons.
 
 **What the fix does:**
-- The Django settings now automatically enable `AUTH_LDAP_START_TLS = True` for plain LDAP connections
+- For LDAPS connections (`ldaps://`), global TLS options are set before initialization
+- For plain LDAP (`ldap://`), `AUTH_LDAP_START_TLS = True` is automatically enabled
 - Connection options are configured to handle self-signed certificates
-- The test script (`test_ldap_bind.py`) attempts START_TLS before binding
+- Network timeouts are configured to detect connection issues quickly
+- Referrals are disabled (recommended for Active Directory)
+- The test script (`test_ldap_bind.py`) properly configures TLS for both LDAP and LDAPS
 
 **Testing the fix:**
 ```bash
@@ -306,7 +312,10 @@ cd backend
 python test_ldap_bind.py
 ```
 
-If START_TLS is working, you should see successful bind attempts.
+If the connection is working, you should see successful bind attempts. For LDAPS, ensure:
+- Port 636 is open on the firewall
+- The AD server has LDAPS enabled
+- The server's SSL certificate is valid (or self-signed certificates are accepted)
 
 ### Debugging
 

@@ -209,6 +209,20 @@ LDAP error: Strong(er) authentication required
 
 Ver detalles completos en [backend/ACTIVE_DIRECTORY_SETUP.md](backend/ACTIVE_DIRECTORY_SETUP.md#stronger-authentication-required-error)
 
+### Error "Can't contact LDAP server" con LDAPS
+
+Si ves este error al usar `ldaps://`:
+```
+Error: Server down or unreachable: Can't contact LDAP server
+```
+
+**Solución:** El sistema ahora está configurado para manejar correctamente conexiones LDAPS:
+- Asegúrate de usar el puerto correcto: `ldaps://servidor:636`
+- El sistema acepta certificados auto-firmados por defecto
+- Para certificados válidos en producción, actualiza las opciones de TLS en `settings.py`
+- Verifica que el servidor AD tiene LDAPS habilitado en el puerto 636
+- Verifica que no hay firewall bloqueando el puerto 636
+
 ## 🎉 ¡Listo!
 
 El sistema está completamente configurado y listo para autenticar usuarios contra Active Directory.
