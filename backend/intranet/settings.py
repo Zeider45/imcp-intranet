@@ -199,6 +199,18 @@ if HAS_DJANGO_AUTH_LDAP and AUTH_LDAP_SERVER_URI:
     AUTH_LDAP_BIND_DN = AUTH_LDAP_BIND_DN
     AUTH_LDAP_BIND_PASSWORD = AUTH_LDAP_BIND_PASSWORD
     
+    # Connection options to fix "Strong(er) authentication required" error
+    # This configures the LDAP connection to use START_TLS for plain LDAP connections
+    AUTH_LDAP_CONNECTION_OPTIONS = {
+        ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_NEVER,  # For self-signed certs
+        ldap.OPT_REFERRALS: 0,  # Disable referrals (recommended for AD)
+    }
+    
+    # Enable START_TLS for plain LDAP connections (ldap://)
+    # This encrypts the connection and satisfies AD's "strong authentication" requirement
+    if AUTH_LDAP_SERVER_URI.startswith('ldap://'):
+        AUTH_LDAP_START_TLS = True
+    
     # User Search
     AUTH_LDAP_USER_SEARCH = LDAPSearch(
         os.environ.get('AUTH_LDAP_USER_SEARCH_BASE', 'DC=example,DC=com'),

@@ -195,6 +195,20 @@ Si encuentras problemas:
 4. **Consultar documentación:** Ver archivos .md en backend/
 5. **Ejecutar tests:** `python manage.py test` para verificar el sistema
 
+### Error "Strong(er) authentication required"
+
+Si ves este error al conectar con Active Directory:
+```
+LDAP error: Strong(er) authentication required
+```
+
+**Solución:** El sistema ya está configurado para usar START_TLS automáticamente con conexiones LDAP planas. Asegúrate de:
+- Usar `ldap://` en AUTH_LDAP_SERVER_URI (START_TLS se aplicará automáticamente)
+- O cambiar a `ldaps://` con puerto 636 para conexión segura directa
+- Verificar que el servidor AD permite START_TLS o LDAPS
+
+Ver detalles completos en [backend/ACTIVE_DIRECTORY_SETUP.md](backend/ACTIVE_DIRECTORY_SETUP.md#stronger-authentication-required-error)
+
 ## 🎉 ¡Listo!
 
 El sistema está completamente configurado y listo para autenticar usuarios contra Active Directory.
