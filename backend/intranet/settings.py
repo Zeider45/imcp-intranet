@@ -200,11 +200,21 @@ if HAS_DJANGO_AUTH_LDAP and AUTH_LDAP_SERVER_URI:
     AUTH_LDAP_BIND_PASSWORD = AUTH_LDAP_BIND_PASSWORD
     
     # Connection options to fix "Strong(er) authentication required" error
-    # This configures the LDAP connection to use START_TLS for plain LDAP connections
+    # and support both LDAP and LDAPS connections
     AUTH_LDAP_CONNECTION_OPTIONS = {
         ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_NEVER,  # For self-signed certs
         ldap.OPT_REFERRALS: 0,  # Disable referrals (recommended for AD)
+        ldap.OPT_NETWORK_TIMEOUT: 10,  # Connection timeout in seconds
     }
+    
+    # For LDAPS (ldaps://), set global TLS options
+    # This is required for SSL/TLS connections to work properly
+    if AUTH_LDAP_SERVER_URI.startswith('ldaps://'):
+        # Set global TLS options for LDAPS
+        ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+        # For production with valid certificates, use:
+        # ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
+        # ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, '/path/to/ca-cert.pem')
     
     # Enable START_TLS for plain LDAP connections (ldap://)
     # This encrypts the connection and satisfies AD's "strong authentication" requirement
