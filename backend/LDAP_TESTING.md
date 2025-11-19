@@ -49,6 +49,7 @@ This is a standalone script (not a Django test) that tests actual LDAP connectio
 - Uses environment variables for configuration
 - Provides detailed error messages and diagnostics
 - Compatible with django-auth-ldap configuration
+- **Automatically attempts START_TLS for plain LDAP connections to fix "Strong(er) authentication required" errors**
 
 **Usage:**
 ```bash
@@ -59,6 +60,8 @@ export AUTH_LDAP_BIND_PASSWORD=your_password
 export AUTH_LDAP_USER_SEARCH_BASE=DC=example,DC=com
 python test_ldap_bind.py
 ```
+
+**Note:** For plain LDAP connections (`ldap://`), the script will automatically attempt START_TLS to encrypt the connection. This helps resolve "Strong(er) authentication required" errors from Active Directory servers that require encrypted connections.
 
 ### 3. `test_django_auth_ldap.py` - Configuration Verification Script
 
@@ -186,6 +189,26 @@ Use the `test_ldap_bind.py` script to test actual connectivity:
 ```bash
 python test_ldap_bind.py
 ```
+
+### "Strong(er) authentication required" Error
+
+If you encounter this error when testing LDAP connections, it means your Active Directory server requires encrypted LDAP connections. The system is already configured to handle this automatically:
+
+1. **For plain LDAP (ldap://)**: START_TLS is automatically attempted
+2. **For secure LDAP (ldaps://)**: TLS/SSL is used directly on port 636
+
+To test, use:
+```bash
+# Plain LDAP with automatic START_TLS
+export AUTH_LDAP_SERVER_URI=ldap://your-server:389
+python test_ldap_bind.py
+
+# Or use secure LDAP directly
+export AUTH_LDAP_SERVER_URI=ldaps://your-server:636
+python test_ldap_bind.py
+```
+
+See [ACTIVE_DIRECTORY_SETUP.md](ACTIVE_DIRECTORY_SETUP.md#stronger-authentication-required-error) for more details.
 
 ## Integration with CI/CD
 

@@ -72,6 +72,19 @@ def try_bind(uri, bind_dn, password):
             # In production, use proper certificate validation
             conn.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
         
+        # For plain LDAP (not LDAPS), try to use START_TLS for encryption
+        # This helps with "Strong(er) authentication required" errors
+        if uri.startswith('ldap://'):
+            try:
+                # Configure TLS options before starting TLS
+                conn.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+                # Start TLS to encrypt the connection
+                conn.start_tls_s()
+            except ldap.LDAPError as tls_error:
+                # If START_TLS fails, continue without it
+                # Some servers may not support START_TLS
+                pass
+        
         # Try to bind
         conn.simple_bind_s(bind_dn, password)
         

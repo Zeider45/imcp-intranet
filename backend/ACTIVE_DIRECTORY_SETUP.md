@@ -274,6 +274,40 @@ curl -X POST http://localhost:8000/api/auth/login/ \
    - Check username attribute (sAMAccountName vs uid vs cn)
    - Check object class filter
 
+### "Strong(er) authentication required" Error
+
+If you see the error **"LDAP error: Strong(er) authentication required"**, this means your Active Directory server requires encrypted LDAP connections. This is a common security requirement in AD environments.
+
+**Solution Options:**
+
+1. **Use LDAPS (Recommended for Production):**
+   ```bash
+   AUTH_LDAP_SERVER_URI=ldaps://172.16.101.106:636
+   ```
+   This uses LDAP over SSL/TLS on port 636.
+
+2. **Use START_TLS with plain LDAP (Automatic):**
+   ```bash
+   AUTH_LDAP_SERVER_URI=ldap://172.16.101.106:389
+   ```
+   The system is already configured to automatically use START_TLS for plain LDAP connections. This encrypts the connection after initial connection on port 389.
+
+3. **Configure AD to allow simple binds (Not Recommended):**
+   In Active Directory, you can disable the requirement for signed/sealed LDAP, but this is NOT recommended for security reasons.
+
+**What the fix does:**
+- The Django settings now automatically enable `AUTH_LDAP_START_TLS = True` for plain LDAP connections
+- Connection options are configured to handle self-signed certificates
+- The test script (`test_ldap_bind.py`) attempts START_TLS before binding
+
+**Testing the fix:**
+```bash
+cd backend
+python test_ldap_bind.py
+```
+
+If START_TLS is working, you should see successful bind attempts.
+
 ### Debugging
 
 Enable Django debug mode and check logs:
