@@ -13,7 +13,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--dry-run', action='store_true', help='Run without saving changes')
         parser.add_argument('--mark-inactive', action='store_true', help='Mark Django users not found in AD as inactive')
-        parser.add_argument('--filter', dest='filter', default=None, help='LDAP filter override')
+        parser.add_argument('--filter', dest='filter', default=None, help='LDAP filter override (e.g., "(&(objectClass=user)(sAMAccountName=*))")')
         parser.add_argument('--base', dest='base', default=None, help='LDAP search base override')
 
     def handle(self, *args, **options):
@@ -31,7 +31,9 @@ class Command(BaseCommand):
 
         # sensible defaults
         if not ldap_filter:
-            ldap_filter = os.environ.get('AUTH_LDAP_USER_SEARCH_FILTER', '(&(objectClass=user)(sAMAccountName=*)(!(objectClass=computer)))')
+            # Use a dedicated sync filter or default to all users
+            # Don't use AUTH_LDAP_USER_SEARCH_FILTER as it may contain %(user)s placeholder
+            ldap_filter = os.environ.get('AUTH_LDAP_SYNC_FILTER', '(&(objectClass=user)(sAMAccountName=*)(!(objectClass=computer)))')
         if not search_base:
             search_base = os.environ.get('AUTH_LDAP_USER_SEARCH_BASE')
             if not search_base:
