@@ -317,6 +317,51 @@ If the connection is working, you should see successful bind attempts. For LDAPS
 - The AD server has LDAPS enabled
 - The server's SSL certificate is valid (or self-signed certificates are accepted)
 
+### Slow Login / Login Takes Too Long
+
+If login requests take 5-10 seconds or more, even with valid credentials, this usually indicates LDAP connectivity issues. The system is configured to try LDAP authentication first, and if the LDAP server is unreachable, it waits for a timeout before falling back to local Django authentication.
+
+**Symptoms:**
+- Login works eventually but takes 5-10+ seconds
+- "Invalid credentials" error after long wait (when user doesn't exist locally)
+- Frontend may timeout waiting for response
+
+**Root Cause:**
+When LDAP is configured but the server is unreachable or has network issues, each authentication attempt must wait for the network timeout before falling back to local authentication.
+
+**Solution:**
+
+1. **Check LDAP connectivity first:**
+   ```bash
+   cd backend
+   python test_ldap_bind.py
+   ```
+   If this fails or times out, fix the LDAP connectivity issue or disable LDAP.
+
+2. **Adjust the network timeout** (if LDAP server is reachable but slow):
+   The default timeout is 5 seconds. You can adjust it via environment variable:
+   ```bash
+   # In your .env file
+   AUTH_LDAP_NETWORK_TIMEOUT=3  # Faster fallback (minimum recommended: 3)
+   # or
+   AUTH_LDAP_NETWORK_TIMEOUT=10  # For slow networks
+   ```
+   Lower values (3-5 seconds) provide faster fallback when LDAP is down.
+   Higher values (10-15 seconds) work better for slow or distant LDAP servers.
+
+3. **Disable LDAP temporarily** if not needed:
+   Remove or comment out the LDAP environment variables:
+   ```bash
+   # AUTH_LDAP_SERVER_URI=ldap://...
+   ```
+   Then restart the Django server. The system will use local authentication only.
+
+4. **Ensure users exist in local database:**
+   If using LDAP fallback, make sure users have local Django accounts:
+   ```bash
+   python manage.py createsuperuser
+   ```
+
 ### Debugging
 
 Enable Django debug mode and check logs:

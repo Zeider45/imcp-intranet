@@ -244,6 +244,8 @@ export AUTH_LDAP_BIND_PASSWORD=password
 export AUTH_LDAP_USER_SEARCH_BASE=DC=example,DC=com
 ```
 
+**Nota:** Si el login tarda mucho tiempo (5-10+ segundos), puede ser un problema de conectividad con el servidor LDAP. Ver la sección de troubleshooting en [ACTIVE_DIRECTORY_SETUP.md](backend/ACTIVE_DIRECTORY_SETUP.md#slow-login--login-takes-too-long) para ajustar el timeout o deshabilitar LDAP temporalmente.
+
 ## 📝 Características
 
 - ✅ API REST completamente funcional con Django REST Framework

@@ -201,10 +201,13 @@ if HAS_DJANGO_AUTH_LDAP and AUTH_LDAP_SERVER_URI:
     
     # Connection options to fix "Strong(er) authentication required" error
     # and support both LDAP and LDAPS connections
+    # Network timeout: configurable via env var, default 5 seconds for faster fallback
+    # when LDAP server is unreachable. Increase if you have slow network.
+    ldap_timeout = int(os.environ.get('AUTH_LDAP_NETWORK_TIMEOUT', '5'))
     AUTH_LDAP_CONNECTION_OPTIONS = {
         ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_NEVER,  # For self-signed certs
         ldap.OPT_REFERRALS: 0,  # Disable referrals (recommended for AD)
-        ldap.OPT_NETWORK_TIMEOUT: 10,  # Connection timeout in seconds
+        ldap.OPT_NETWORK_TIMEOUT: ldap_timeout,  # Connection timeout in seconds
     }
     
     # For LDAPS (ldaps://), set global TLS options
