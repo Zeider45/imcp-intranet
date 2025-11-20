@@ -62,9 +62,13 @@ def try_bind(uri, bind_dn, password):
         if uri.startswith('ldaps://'):
             # Set global TLS options
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+            # Force refresh of TLS context after setting options
+            # This is critical for the options to take effect
+            ldap.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
             # For production, use proper certificate validation:
             # ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
             # ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, '/path/to/ca-cert.pem')
+            # ldap.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
         
         # Initialize LDAP connection
         conn = ldap.initialize(uri)

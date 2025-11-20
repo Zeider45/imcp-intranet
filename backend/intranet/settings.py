@@ -245,9 +245,13 @@ if HAS_DJANGO_AUTH_LDAP and AUTH_LDAP_SERVER_URI:
     if AUTH_LDAP_SERVER_URI.startswith('ldaps://'):
         # Set global TLS options for LDAPS
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+        # Force refresh of TLS context after setting options
+        # This is critical for the options to take effect
+        ldap.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
         # For production with valid certificates, use:
         # ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
         # ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, '/path/to/ca-cert.pem')
+        # ldap.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
     
     # Enable START_TLS for plain LDAP connections (ldap://)
     # This encrypts the connection and satisfies AD's "strong authentication" requirement
