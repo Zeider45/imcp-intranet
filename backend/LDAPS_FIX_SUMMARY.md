@@ -1,6 +1,21 @@
 # LDAPS Connection Fix - Summary
 
-## Problem
+## Latest Fix (2025-11-20)
+
+### Issue
+LDAPS connections were failing with SSL/TLS initialization error:
+```
+UNAVAILABLE({'result': 52, 'desc': 'Server is unavailable', 'info': '00000000: LdapErr: DSID-0C0915EA, comment: Error initializing SSL/TLS, data 0, v4563'})
+```
+
+### Solution
+Added `ldap.set_option(ldap.OPT_X_TLS_NEWCTX, 0)` after setting global TLS options. This forces the LDAP library to refresh the TLS context, ensuring that the global options take effect before the connection is initialized.
+
+**Critical:** The `OPT_X_TLS_NEWCTX` option must be set **after** all other TLS options but **before** calling `ldap.initialize()`.
+
+---
+
+## Original Problem (Historical)
 
 When using `ldaps://` (LDAP over SSL) for Active Directory authentication, the connection failed with the following error:
 
@@ -19,7 +34,7 @@ Previously, the code was:
 1. Initializing the connection with `ldap.initialize(uri)`
 2. Then setting TLS options on the connection object
 
-For LDAPS (which uses SSL/TLS from the start), this order is incorrect. The TLS options must be set globally before initialization.
+For LDAPS (which uses SSL/TLS from the start), this order is incorrect. The TLS options must be set globally before initialization, and the TLS context must be refreshed after setting options.
 
 ## Solution
 
@@ -42,6 +57,8 @@ if uri.startswith('ldaps://'):
 # For LDAPS, configure TLS options globally BEFORE initializing
 if uri.startswith('ldaps://'):
     ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+    # Force refresh of TLS context after setting options
+    ldap.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
 
 # Initialize LDAP connection
 conn = ldap.initialize(uri)
@@ -56,9 +73,13 @@ Added LDAPS-specific configuration:
 if AUTH_LDAP_SERVER_URI.startswith('ldaps://'):
     # Set global TLS options for LDAPS
     ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+    # Force refresh of TLS context after setting options
+    # This is critical for the options to take effect
+    ldap.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
     # For production with valid certificates, use:
     # ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
     # ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, '/path/to/ca-cert.pem')
+    # ldap.set_option(ldap.OPT_X_TLS_NEWCTX, 0)
 ```
 
 Also added network timeout configuration for better error detection:
