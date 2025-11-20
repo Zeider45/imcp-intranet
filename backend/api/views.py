@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate, login, logout
 from django_filters.rest_framework import DjangoFilterBackend
+import logging
 from .permissions import (
     IsAdminOrReadOnly,
     IsDepartmentManager,
@@ -46,6 +47,9 @@ from .serializers import (
     ProjectSerializer,
     TaskSerializer
 )
+
+# Logger for authentication
+logger = logging.getLogger(__name__)
 
 
 @api_view(['GET'])
@@ -89,11 +93,36 @@ def ldap_login(request):
             status=status.HTTP_400_BAD_REQUEST
         )
     
+    # Store original username for logging
+    original_username = username
+    
+    # Normalize username for Active Directory authentication
+    # Remove leading/trailing whitespace
+    username = username.strip()
+    
+    # Handle different username formats:
+    # 1. DOMAIN\username -> username
+    # 2. username@domain.com -> username
+    # 3. username -> username (no change)
+    if '\\' in username:
+        # Handle DOMAIN\username format
+        username = username.split('\\')[-1]
+    elif '@' in username:
+        # Handle username@domain.com format
+        username = username.split('@')[0]
+    
+    # Log authentication attempt (without password)
+    if original_username != username:
+        logger.info(f"Login attempt: normalized '{original_username}' to '{username}'")
+    else:
+        logger.info(f"Login attempt for user: {username}")
+    
     # Authenticate against configured backends (including LDAP)
     user = authenticate(request, username=username, password=password)
     
     if user is not None:
         # User authenticated successfully
+        logger.info(f"User '{username}' authenticated successfully")
         login(request, user)
         
         # Get or create auth token
@@ -131,6 +160,7 @@ def ldap_login(request):
         }, status=status.HTTP_200_OK)
     else:
         # Authentication failed
+        logger.warning(f"Authentication failed for user: {username}")
         return Response(
             {'error': 'Invalid credentials'},
             status=status.HTTP_401_UNAUTHORIZED
