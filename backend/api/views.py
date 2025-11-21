@@ -83,6 +83,12 @@ def ldap_login(request):
     Authenticate user via Active Directory/LDAP
     Expects: username, password
     Returns: user info and authentication token
+    
+    On successful login, this function:
+    1. Authenticates the user against configured backends (LDAP/local)
+    2. Updates user information from LDAP attributes (if available)
+    3. Creates or updates the user's profile
+    4. Syncs user groups from LDAP/AD
     """
     username = request.data.get('username')
     password = request.data.get('password')
@@ -123,12 +129,56 @@ def ldap_login(request):
     if user is not None:
         # User authenticated successfully
         logger.info(f"User '{username}' authenticated successfully")
+        
+        # Sync user data from LDAP backend if available
+        # This ensures user information is updated on each login
+        from django.conf import settings
+        if hasattr(user, 'ldap_user') and user.ldap_user:
+            # User was authenticated via LDAP backend
+            # The ldap_user object contains LDAP attributes
+            try:
+                ldap_attrs = user.ldap_user._user_attrs
+                logger.info(f"Syncing LDAP attributes for user: {username}")
+                
+                # Update user fields from LDAP attributes
+                # These are already mapped by AUTH_LDAP_USER_ATTR_MAP in settings
+                # but we explicitly save to ensure they're persisted
+                user.save()
+                
+                # Sync groups from LDAP if ldap_sync module is available
+                try:
+                    from .ldap_sync import sync_user_relations
+                    sync_user_relations(user, ldap_attrs)
+                    logger.info(f"Synced LDAP groups for user: {username}")
+                except Exception as e:
+                    logger.warning(f"Could not sync LDAP groups for user {username}: {e}")
+                    
+            except Exception as e:
+                logger.warning(f"Could not sync LDAP attributes for user {username}: {e}")
+        
+        # Ensure user has a profile (create if it doesn't exist)
+        # This handles cases where the signal might have failed
+        profile, created = UserProfile.objects.get_or_create(user=user)
+        if created:
+            logger.info(f"Created UserProfile for user: {username}")
+        
+        # Update profile with any additional information from LDAP if available
+        # This could be extended to include phone, position, etc. from LDAP
+        if hasattr(user, 'ldap_user') and user.ldap_user:
+            try:
+                ldap_attrs = user.ldap_user._user_attrs
+                # You can add custom LDAP attribute mappings here
+                # For example: profile.phone = ldap_attrs.get('telephoneNumber', [''])[0]
+                # profile.save()
+            except Exception as e:
+                logger.debug(f"Could not extract additional LDAP attributes: {e}")
+        
         login(request, user)
         
         # Get or create auth token
         token, _ = Token.objects.get_or_create(user=user)
         
-        # Get user profile if exists
+        # Get user profile data
         try:
             profile = UserProfile.objects.select_related('department').get(user=user)
             profile_data = {
