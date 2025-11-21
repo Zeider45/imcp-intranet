@@ -169,7 +169,7 @@ class UserSyncOnLoginTest(TestCase):
         
         # Test DOMAIN\username format
         response = self.client.post('/api/auth/login/', {
-            'username': 'DOMAIN\\testuser',
+            'username': r'DOMAIN\testuser',
             'password': 'password123'
         }, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)

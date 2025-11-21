@@ -132,7 +132,7 @@ def ldap_login(request):
         
         # Sync user data from LDAP backend if available
         # This ensures user information is updated on each login
-        from django.conf import settings
+        ldap_attrs = None
         if hasattr(user, 'ldap_user') and user.ldap_user:
             # User was authenticated via LDAP backend
             # The ldap_user object contains LDAP attributes
@@ -164,12 +164,12 @@ def ldap_login(request):
         
         # Update profile with any additional information from LDAP if available
         # This could be extended to include phone, position, etc. from LDAP
-        if hasattr(user, 'ldap_user') and user.ldap_user:
+        if ldap_attrs:
             try:
-                ldap_attrs = user.ldap_user._user_attrs
                 # You can add custom LDAP attribute mappings here
                 # For example: profile.phone = ldap_attrs.get('telephoneNumber', [''])[0]
                 # profile.save()
+                pass
             except Exception as e:
                 logger.debug(f"Could not extract additional LDAP attributes: {e}")
         
@@ -178,16 +178,13 @@ def ldap_login(request):
         # Get or create auth token
         token, _ = Token.objects.get_or_create(user=user)
         
-        # Get user profile data
-        try:
-            profile = UserProfile.objects.select_related('department').get(user=user)
-            profile_data = {
-                'department': profile.department.name if profile.department else None,
-                'position': profile.position,
-                'phone': profile.phone,
-            }
-        except UserProfile.DoesNotExist:
-            profile_data = None
+        # Get user profile data (guaranteed to exist due to get_or_create above)
+        profile = UserProfile.objects.select_related('department').get(user=user)
+        profile_data = {
+            'department': profile.department.name if profile.department else None,
+            'position': profile.position,
+            'phone': profile.phone,
+        }
         
         # Get user groups for role-based authorization
         user_groups = list(user.groups.values_list('name', flat=True))
