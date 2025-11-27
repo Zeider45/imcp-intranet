@@ -33,6 +33,31 @@ router.register(r'quick-links', views.QuickLinkViewSet, basename='quick-link')
 router.register(r'projects', views.ProjectViewSet, basename='project')
 router.register(r'tasks', views.TaskViewSet, basename='task')
 
+# Business Process Modules - IMCP Use Cases
+# Consulta de Documentación
+router.register(r'technical-documents', views.TechnicalDocumentViewSet, basename='technical-document')
+router.register(r'document-loans', views.DocumentLoanViewSet, basename='document-loan')
+
+# Realiza y Aprueba Documentación
+router.register(r'document-drafts', views.DocumentDraftViewSet, basename='document-draft')
+router.register(r'document-approvals', views.DocumentApprovalViewSet, basename='document-approval')
+
+# Establecer Políticas
+router.register(r'policies', views.PolicyViewSet, basename='policy')
+router.register(r'policy-distributions', views.PolicyDistributionViewSet, basename='policy-distribution')
+
+# Planificar y Asistir a Capacitaciones
+router.register(r'training-plans', views.TrainingPlanViewSet, basename='training-plan')
+router.register(r'training-providers', views.TrainingProviderViewSet, basename='training-provider')
+router.register(r'training-quotations', views.TrainingQuotationViewSet, basename='training-quotation')
+router.register(r'training-sessions', views.TrainingSessionViewSet, basename='training-session')
+router.register(r'training-attendances', views.TrainingAttendanceViewSet, basename='training-attendance')
+
+# Disponibilidad de Vacante Interna
+router.register(r'internal-vacancies', views.InternalVacancyViewSet, basename='internal-vacancy')
+router.register(r'vacancy-applications', views.VacancyApplicationViewSet, basename='vacancy-application')
+router.register(r'vacancy-transitions', views.VacancyTransitionViewSet, basename='vacancy-transition')
+
 urlpatterns = [
     path('health/', views.health_check, name='health_check'),
     path('welcome/', views.welcome, name='welcome'),
