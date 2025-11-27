@@ -5,33 +5,33 @@ from . import views
 # Create a router and register our viewsets with it
 router = DefaultRouter()
 
-# Existing modules
+# Core modules
 router.register(r'departments', views.DepartmentViewSet, basename='department')
-router.register(r'profiles', views.UserProfileViewSet, basename='profile')
-router.register(r'announcements', views.AnnouncementViewSet, basename='announcement')
-router.register(r'documents', views.DocumentViewSet, basename='document')
 
-# Time and Resource Management
-router.register(r'calendar-events', views.CalendarEventViewSet, basename='calendar-event')
-router.register(r'leave-requests', views.LeaveRequestViewSet, basename='leave-request')
-router.register(r'resources', views.ResourceViewSet, basename='resource')
-router.register(r'resource-reservations', views.ResourceReservationViewSet, basename='resource-reservation')
+# Business Process Modules - IMCP Use Cases
+# Consulta de Documentación
+router.register(r'technical-documents', views.TechnicalDocumentViewSet, basename='technical-document')
+router.register(r'document-loans', views.DocumentLoanViewSet, basename='document-loan')
 
-# Training and Development
-router.register(r'courses', views.CourseViewSet, basename='course')
-router.register(r'course-enrollments', views.CourseEnrollmentViewSet, basename='course-enrollment')
-router.register(r'knowledge-articles', views.KnowledgeArticleViewSet, basename='knowledge-article')
+# Realiza y Aprueba Documentación
+router.register(r'document-drafts', views.DocumentDraftViewSet, basename='document-draft')
+router.register(r'document-approvals', views.DocumentApprovalViewSet, basename='document-approval')
 
-# Interaction and Collaboration
-router.register(r'forum-categories', views.ForumCategoryViewSet, basename='forum-category')
-router.register(r'forum-posts', views.ForumPostViewSet, basename='forum-post')
-router.register(r'suggestions', views.SuggestionViewSet, basename='suggestion')
+# Establecer Políticas
+router.register(r'policies', views.PolicyViewSet, basename='policy')
+router.register(r'policy-distributions', views.PolicyDistributionViewSet, basename='policy-distribution')
 
-# Tools and Data
-router.register(r'kpi-dashboards', views.KPIDashboardViewSet, basename='kpi-dashboard')
-router.register(r'quick-links', views.QuickLinkViewSet, basename='quick-link')
-router.register(r'projects', views.ProjectViewSet, basename='project')
-router.register(r'tasks', views.TaskViewSet, basename='task')
+# Planificar y Asistir a Capacitaciones
+router.register(r'training-plans', views.TrainingPlanViewSet, basename='training-plan')
+router.register(r'training-providers', views.TrainingProviderViewSet, basename='training-provider')
+router.register(r'training-quotations', views.TrainingQuotationViewSet, basename='training-quotation')
+router.register(r'training-sessions', views.TrainingSessionViewSet, basename='training-session')
+router.register(r'training-attendances', views.TrainingAttendanceViewSet, basename='training-attendance')
+
+# Disponibilidad de Vacante Interna
+router.register(r'internal-vacancies', views.InternalVacancyViewSet, basename='internal-vacancy')
+router.register(r'vacancy-applications', views.VacancyApplicationViewSet, basename='vacancy-application')
+router.register(r'vacancy-transitions', views.VacancyTransitionViewSet, basename='vacancy-transition')
 
 urlpatterns = [
     path('health/', views.health_check, name='health_check'),
