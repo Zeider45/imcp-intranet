@@ -835,6 +835,370 @@ DELETE /api/tasks/{id}/      - Eliminar tarea
 
 ---
 
+## 📋 Módulos de Procesos de Negocio IMCP
+
+### 16. Consulta de Documentación Técnica
+
+Sistema para gestionar y consultar la documentación técnica del IMCP.
+
+**Características:**
+- Catálogo de documentos técnicos (manuales, procedimientos, políticas)
+- Índice maestro con ubicación física
+- Sistema de autorización de acceso por usuario
+- Versiones y estados de documentos
+- Documentos digitalizados disponibles
+
+**Endpoints:**
+```
+GET    /api/technical-documents/           - Listar documentos técnicos
+POST   /api/technical-documents/           - Crear documento técnico
+GET    /api/technical-documents/available/ - Documentos disponibles
+GET    /api/technical-documents/catalog/   - Catálogo de documentos
+GET    /api/technical-documents/{id}/      - Obtener documento específico
+PUT    /api/technical-documents/{id}/      - Actualizar documento
+DELETE /api/technical-documents/{id}/      - Eliminar documento
+```
+
+**Modelo TechnicalDocument:**
+```python
+- title: CharField (max_length=300)
+- code: CharField (max_length=50, unique=True)
+- description: TextField (blank=True)
+- document_type: CharField (choices=['manual', 'procedure', 'policy', 'guide', 'specification', 'other'])
+- physical_location: CharField (max_length=200)
+- department: ForeignKey (Department, null=True)
+- version: CharField (max_length=20, default='1.0')
+- status: CharField (choices=['available', 'on_loan', 'archived', 'under_review'])
+- authorized_users: ManyToManyField (User)
+- file: FileField (optional)
+- created_by: ForeignKey (User)
+```
+
+---
+
+### 17. Bitácora de Préstamos de Documentos
+
+Registro y control de préstamos de documentación técnica.
+
+**Características:**
+- Solicitud de préstamo de documentos
+- Flujo de aprobación por asistente administrativo
+- Registro de entrega y firma del analista
+- Control de fechas de devolución
+- Verificación de devolución de documentos
+- Alertas de documentos vencidos
+
+**Endpoints:**
+```
+GET    /api/document-loans/              - Listar préstamos
+POST   /api/document-loans/              - Solicitar préstamo
+GET    /api/document-loans/pending/      - Préstamos pendientes
+GET    /api/document-loans/overdue/      - Préstamos vencidos
+GET    /api/document-loans/{id}/         - Obtener préstamo específico
+POST   /api/document-loans/{id}/approve/ - Aprobar préstamo
+POST   /api/document-loans/{id}/deliver/ - Registrar entrega
+POST   /api/document-loans/{id}/return_document/ - Registrar devolución
+```
+
+**Modelo DocumentLoan:**
+```python
+- document: ForeignKey (TechnicalDocument)
+- analyst: ForeignKey (User)
+- assistant: ForeignKey (User, null=True)
+- status: CharField (choices=['requested', 'approved', 'delivered', 'returned', 'overdue', 'cancelled'])
+- request_date: DateTimeField (auto_now_add=True)
+- delivery_date: DateTimeField (null=True)
+- expected_return_date: DateField (null=True)
+- actual_return_date: DateTimeField (null=True)
+- purpose: TextField
+- analyst_signature: BooleanField (default=False)
+- return_verified: BooleanField (default=False)
+```
+
+---
+
+### 18. Elaboración de Documentación
+
+Sistema para crear y gestionar borradores de documentación técnica.
+
+**Características:**
+- Plantillas según tipo de documento
+- Editor de contenido de documentación
+- Control de versiones de borradores
+- Envío para revisión al gerente
+- Estados: borrador, en revisión, aprobado, rechazado
+
+**Endpoints:**
+```
+GET    /api/document-drafts/                     - Listar borradores
+POST   /api/document-drafts/                     - Crear borrador
+GET    /api/document-drafts/my_drafts/           - Mis borradores
+GET    /api/document-drafts/pending_review/      - Pendientes de revisión
+GET    /api/document-drafts/{id}/                - Obtener borrador específico
+POST   /api/document-drafts/{id}/submit_for_review/ - Enviar a revisión
+PUT    /api/document-drafts/{id}/                - Actualizar borrador
+DELETE /api/document-drafts/{id}/                - Eliminar borrador
+```
+
+**Modelo DocumentDraft:**
+```python
+- title: CharField (max_length=300)
+- document_type: CharField (choices=['technical_manual', 'user_guide', 'functional_spec', 'procedure', 'other'])
+- content: TextField
+- system_or_functionality: CharField (max_length=200)
+- author: ForeignKey (User)
+- status: CharField (choices=['draft', 'under_review', 'pending_approval', 'approved', 'approved_with_observations', 'rejected', 'published'])
+- version: CharField (max_length=20, default='1.0')
+- manager: ForeignKey (User, null=True)
+- submitted_at: DateTimeField (null=True)
+```
+
+---
+
+### 19. Aprobación de Documentación
+
+Sistema de revisión y aprobación de documentación técnica por gerentes.
+
+**Características:**
+- Bandeja de documentos pendientes de revisión
+- Decisiones: Aprobar, Aprobar con observaciones, Rechazar
+- Registro de observaciones técnicas
+- Establecimiento de plazos para correcciones
+- Firma digital del revisor
+
+**Endpoints:**
+```
+GET    /api/document-approvals/                     - Listar aprobaciones
+POST   /api/document-approvals/                     - Crear aprobación
+GET    /api/document-approvals/pending/             - Aprobaciones pendientes
+GET    /api/document-approvals/{id}/                - Obtener aprobación específica
+POST   /api/document-approvals/{id}/approve/        - Aprobar documento
+POST   /api/document-approvals/{id}/approve_with_observations/ - Aprobar con observaciones
+POST   /api/document-approvals/{id}/reject/         - Rechazar documento
+```
+
+**Modelo DocumentApproval:**
+```python
+- document_draft: ForeignKey (DocumentDraft)
+- reviewer: ForeignKey (User)
+- assistant: ForeignKey (User, null=True)
+- decision: CharField (choices=['pending', 'approved', 'approved_with_observations', 'rejected'])
+- technical_observations: TextField (blank=True)
+- corrections_required: TextField (blank=True)
+- correction_deadline: DateField (null=True)
+- rejection_reason: TextField (blank=True)
+- approved_at: DateTimeField (null=True)
+- validity_date: DateField (null=True)
+- requires_board_approval: BooleanField (default=False)
+- board_approved: BooleanField (default=False)
+- reviewer_signature: BooleanField (default=False)
+```
+
+---
+
+### 20. Establecer Políticas
+
+Sistema para crear, revisar y publicar políticas tecnológicas institucionales.
+
+**Características:**
+- Creación de políticas con origen (SUDEBAN, BCV, auditoría, mejora)
+- Plantilla oficial de políticas
+- Revisión por gerentes pares y auditor interno
+- Aprobación por junta directiva
+- Publicación oficial con fecha de vigencia
+- Distribución de copias controladas
+
+**Endpoints:**
+```
+GET    /api/policies/                       - Listar políticas
+POST   /api/policies/                       - Crear política
+GET    /api/policies/published/             - Políticas publicadas
+GET    /api/policies/pending_approval/      - Pendientes de aprobación de junta
+GET    /api/policies/{id}/                  - Obtener política específica
+POST   /api/policies/{id}/submit_for_review/ - Enviar a revisión
+POST   /api/policies/{id}/approve_board/    - Aprobar por junta directiva
+POST   /api/policies/{id}/publish/          - Publicar política
+POST   /api/policies/{id}/mark_obsolete/    - Marcar como obsoleta
+
+GET    /api/policy-distributions/           - Listar distribuciones
+POST   /api/policy-distributions/           - Crear distribución
+GET    /api/policy-distributions/pending_acknowledgment/ - Pendientes de acuse
+POST   /api/policy-distributions/{id}/acknowledge/ - Acusar recibo
+```
+
+**Modelo Policy:**
+```python
+- title: CharField (max_length=300)
+- code: CharField (max_length=50, unique=True)
+- description: TextField
+- content: TextField
+- status: CharField (choices=['draft', 'under_review', 'pending_signatures', 'approved', 'published', 'obsolete'])
+- origin: CharField (choices=['sudeban', 'bcv', 'audit', 'improvement', 'internal', 'other'])
+- origin_justification: TextField
+- created_by: ForeignKey (User)
+- auditor_reviewer: ForeignKey (User, null=True)
+- peer_reviewer: ForeignKey (User, null=True)
+- review_meeting_date: DateField (null=True)
+- board_approved: BooleanField (default=False)
+- effective_date: DateField (null=True)
+- version: CharField (max_length=20, default='1.0')
+- replaces_policy: ForeignKey (self, null=True)
+```
+
+---
+
+### 21. Planificación de Capacitaciones
+
+Sistema para planificar y gestionar capacitaciones técnicas para analistas.
+
+**Características:**
+- Planes de capacitación por origen
+- Alcance intergerencial e interdepartamental
+- Revisión y aprobación de presupuesto
+- Gestión de proveedores de capacitación
+- Cotizaciones con temario, costo y fechas
+- Calendario anual de capacitaciones
+
+**Endpoints:**
+```
+GET    /api/training-plans/               - Listar planes
+POST   /api/training-plans/               - Crear plan
+GET    /api/training-plans/calendar/      - Calendario de capacitaciones
+GET    /api/training-plans/{id}/          - Obtener plan específico
+POST   /api/training-plans/{id}/approve_budget/ - Aprobar presupuesto
+POST   /api/training-plans/{id}/assign_manager/ - Asignar gerente
+
+GET    /api/training-providers/           - Listar proveedores
+POST   /api/training-providers/           - Crear proveedor
+GET    /api/training-providers/active/    - Proveedores activos
+
+GET    /api/training-quotations/          - Listar cotizaciones
+POST   /api/training-quotations/          - Crear cotización
+POST   /api/training-quotations/{id}/select/ - Seleccionar cotización
+```
+
+**Modelo TrainingPlan:**
+```python
+- title: CharField (max_length=300)
+- description: TextField
+- topics: TextField
+- origin: CharField (choices=['performance', 'new_technology', 'regulation', 'audit', 'other'])
+- scope: CharField (choices=['intergerencial', 'interdepartamental'])
+- modality: CharField (choices=['presential', 'online', 'hybrid'])
+- duration_hours: IntegerField
+- status: CharField (choices=['planning', 'budget_review', 'quotation', 'approved', 'scheduled', 'in_progress', 'completed', 'cancelled'])
+- created_by: ForeignKey (User)
+- assigned_manager: ForeignKey (User, null=True)
+- budget_amount: DecimalField (null=True)
+- budget_approved: BooleanField (default=False)
+```
+
+---
+
+### 22. Asistencia a Capacitaciones
+
+Sistema de convocatoria, confirmación y asistencia a sesiones de capacitación.
+
+**Características:**
+- Convocatoria oficial de capacitación
+- Confirmación o justificación de asistencia
+- Lista de asistencia con firma
+- Registro de hora de llegada y salida
+- Evaluación de conocimientos
+- Emisión de certificados de participación
+
+**Endpoints:**
+```
+GET    /api/training-sessions/            - Listar sesiones
+POST   /api/training-sessions/            - Crear sesión
+GET    /api/training-sessions/upcoming/   - Sesiones próximas
+GET    /api/training-sessions/{id}/       - Obtener sesión específica
+POST   /api/training-sessions/{id}/confirm/ - Confirmar sesión
+POST   /api/training-sessions/{id}/complete/ - Completar sesión
+
+GET    /api/training-attendances/         - Listar asistencias
+POST   /api/training-attendances/         - Crear asistencia
+GET    /api/training-attendances/my_invitations/ - Mis convocatorias
+POST   /api/training-attendances/{id}/confirm_attendance/ - Confirmar asistencia
+POST   /api/training-attendances/{id}/decline_attendance/ - Rechazar asistencia
+POST   /api/training-attendances/{id}/record_attendance/ - Registrar asistencia
+POST   /api/training-attendances/{id}/issue_certificate/ - Emitir certificado
+```
+
+**Modelo TrainingSession:**
+```python
+- training_plan: ForeignKey (TrainingPlan)
+- title: CharField (max_length=300)
+- description: TextField (blank=True)
+- instructor_name: CharField (max_length=200)
+- provider: ForeignKey (TrainingProvider, null=True)
+- status: CharField (choices=['scheduled', 'confirmed', 'in_progress', 'completed', 'cancelled'])
+- location: CharField (max_length=300)
+- start_datetime: DateTimeField
+- end_datetime: DateTimeField
+- max_participants: IntegerField (null=True)
+- confirmation_deadline: DateField (null=True)
+```
+
+---
+
+### 23. Vacantes Internas
+
+Sistema de gestión de vacantes y postulaciones internas del bloque tecnológico.
+
+**Características:**
+- Solicitud de vacante por gerente con justificación
+- Verificación de presupuesto por RRHH
+- Descripción de puesto con requisitos técnicos
+- Publicación en tableros y áreas comunes
+- Postulación interna con CV y certificados
+- Matriz de comparación de candidatos
+- Gestión de transición al nuevo puesto
+
+**Endpoints:**
+```
+GET    /api/internal-vacancies/           - Listar vacantes
+POST   /api/internal-vacancies/           - Crear vacante
+GET    /api/internal-vacancies/published/ - Vacantes publicadas
+GET    /api/internal-vacancies/{id}/      - Obtener vacante específica
+POST   /api/internal-vacancies/{id}/approve_budget/ - Aprobar presupuesto
+POST   /api/internal-vacancies/{id}/publish/ - Publicar vacante
+POST   /api/internal-vacancies/{id}/close/ - Cerrar vacante
+
+GET    /api/vacancy-applications/         - Listar aplicaciones
+POST   /api/vacancy-applications/         - Crear aplicación
+GET    /api/vacancy-applications/my_applications/ - Mis aplicaciones
+POST   /api/vacancy-applications/{id}/shortlist/ - Preseleccionar
+POST   /api/vacancy-applications/{id}/schedule_interview/ - Programar entrevista
+POST   /api/vacancy-applications/{id}/record_interview/ - Registrar entrevista
+POST   /api/vacancy-applications/{id}/select/ - Seleccionar candidato
+POST   /api/vacancy-applications/{id}/reject/ - Rechazar aplicación
+
+GET    /api/vacancy-transitions/          - Listar transiciones
+POST   /api/vacancy-transitions/          - Crear transición
+POST   /api/vacancy-transitions/{id}/start_transition/ - Iniciar transición
+POST   /api/vacancy-transitions/{id}/complete_transition/ - Completar transición
+```
+
+**Modelo InternalVacancy:**
+```python
+- title: CharField (max_length=200)
+- department: ForeignKey (Department)
+- description: TextField
+- responsibilities: TextField
+- technical_requirements: TextField
+- competencies: TextField
+- experience_required: CharField (max_length=200)
+- status: CharField (choices=['draft', 'pending_approval', 'published', 'closed', 'filled', 'cancelled'])
+- requested_by: ForeignKey (User)
+- hr_manager: ForeignKey (User, null=True)
+- authorization_justification: TextField
+- budget_approved: BooleanField (default=False)
+- application_deadline: DateField (null=True)
+```
+
+---
+
 ## 📞 Soporte
 
 Para preguntas o problemas, por favor crear un issue en el repositorio.
