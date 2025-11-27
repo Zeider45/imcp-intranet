@@ -68,6 +68,9 @@ from .serializers import (
     VacancyTransitionSerializer
 )
 
+# Constants
+POSITION_FILLED_REJECTION_REASON = 'Puesto cubierto por otro candidato'
+
 # Logger for authentication
 logger = logging.getLogger(__name__)
 
@@ -793,7 +796,7 @@ class DocumentLoanViewSet(viewsets.ModelViewSet):
         """Approve a loan request"""
         loan = self.get_object()
         loan.status = 'approved'
-        loan.assistant = request.user if request.user.is_authenticated else None
+        loan.assistant = request.user
         loan.save()
         serializer = self.get_serializer(loan)
         return Response(serializer.data)
@@ -879,7 +882,8 @@ class DocumentDraftViewSet(viewsets.ModelViewSet):
         draft.submitted_at = timezone.now()
         if 'manager' in request.data:
             from django.contrib.auth.models import User
-            draft.manager = User.objects.get(pk=request.data['manager'])
+            from django.shortcuts import get_object_or_404
+            draft.manager = get_object_or_404(User, pk=request.data['manager'])
         draft.save()
         serializer = self.get_serializer(draft)
         return Response(serializer.data)
@@ -997,12 +1001,12 @@ class PolicyViewSet(viewsets.ModelViewSet):
         """Submit policy for peer and auditor review"""
         policy = self.get_object()
         policy.status = 'under_review'
+        from django.contrib.auth.models import User
+        from django.shortcuts import get_object_or_404
         if 'peer_reviewer' in request.data:
-            from django.contrib.auth.models import User
-            policy.peer_reviewer = User.objects.get(pk=request.data['peer_reviewer'])
+            policy.peer_reviewer = get_object_or_404(User, pk=request.data['peer_reviewer'])
         if 'auditor_reviewer' in request.data:
-            from django.contrib.auth.models import User
-            policy.auditor_reviewer = User.objects.get(pk=request.data['auditor_reviewer'])
+            policy.auditor_reviewer = get_object_or_404(User, pk=request.data['auditor_reviewer'])
         policy.save()
         serializer = self.get_serializer(policy)
         return Response(serializer.data)
@@ -1113,7 +1117,8 @@ class TrainingPlanViewSet(viewsets.ModelViewSet):
         plan = self.get_object()
         if 'manager_id' in request.data:
             from django.contrib.auth.models import User
-            plan.assigned_manager = User.objects.get(pk=request.data['manager_id'])
+            from django.shortcuts import get_object_or_404
+            plan.assigned_manager = get_object_or_404(User, pk=request.data['manager_id'])
             plan.save()
         serializer = self.get_serializer(plan)
         return Response(serializer.data)
@@ -1406,7 +1411,7 @@ class VacancyApplicationViewSet(viewsets.ModelViewSet):
         # Reject other applications
         VacancyApplication.objects.filter(
             vacancy=application.vacancy
-        ).exclude(pk=pk).update(status='rejected', rejection_reason='Position filled by another candidate')
+        ).exclude(pk=pk).update(status='rejected', rejection_reason=POSITION_FILLED_REJECTION_REASON)
         serializer = self.get_serializer(application)
         return Response(serializer.data)
     
