@@ -24,11 +24,11 @@ class Department(models.Model):
 # BUSINESS PROCESS MODELS - IMCP USE CASES
 # ========================================
 
-class TechnicalDocument(models.Model):
+class LibraryDocument(models.Model):
     """
-    Modelo para Documentación Técnica del IMCP
-    Caso de Uso: CONSULTA DOCUMENTACIÓN
-    Representa manuales, políticas, procedimientos almacenados en el archivo físico
+    Modelo unificado para Biblioteca de Documentos del IMCP
+    Unifica: Documentación Técnica, Elaboración de Docs y Aprobación de Docs
+    Permite subir, ver, descargar archivos, y realizar elaboración y aprobación
     """
     DOCUMENT_TYPE_CHOICES = [
         ('manual', 'Manual Técnico'),
@@ -36,171 +36,78 @@ class TechnicalDocument(models.Model):
         ('policy', 'Política'),
         ('guide', 'Guía de Usuario'),
         ('specification', 'Especificación Funcional'),
-        ('other', 'Otro'),
-    ]
-    
-    STATUS_CHOICES = [
-        ('available', 'Disponible'),
-        ('on_loan', 'En Préstamo'),
-        ('archived', 'Archivado'),
-        ('under_review', 'En Revisión'),
-    ]
-    
-    title = models.CharField(max_length=300, verbose_name="Título del Documento")
-    code = models.CharField(max_length=50, unique=True, verbose_name="Código de Documento")
-    description = models.TextField(blank=True, verbose_name="Descripción")
-    document_type = models.CharField(max_length=20, choices=DOCUMENT_TYPE_CHOICES, default='manual')
-    physical_location = models.CharField(max_length=200, verbose_name="Ubicación Física")
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name='technical_documents')
-    version = models.CharField(max_length=20, default='1.0', verbose_name="Versión")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
-    authorized_users = models.ManyToManyField(User, related_name='authorized_documents', blank=True, verbose_name="Usuarios Autorizados")
-    file = models.FileField(
-        upload_to='technical_documents/%Y/%m/',
-        blank=True,
-        null=True,
-        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'doc', 'docx'])],
-        verbose_name="Archivo Digital (opcional)"
-    )
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_technical_documents')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        ordering = ['code']
-        verbose_name = 'Documentación Técnica'
-        verbose_name_plural = 'Documentaciones Técnicas'
-    
-    def __str__(self):
-        return f"{self.code} - {self.title}"
-
-
-class DocumentLoan(models.Model):
-    """
-    Modelo para Bitácora de Préstamos de Documentos
-    Caso de Uso: CONSULTA DOCUMENTACIÓN
-    Registra préstamos y devoluciones de documentación técnica
-    """
-    STATUS_CHOICES = [
-        ('requested', 'Solicitado'),
-        ('approved', 'Aprobado'),
-        ('delivered', 'Entregado'),
-        ('returned', 'Devuelto'),
-        ('overdue', 'Vencido'),
-        ('cancelled', 'Cancelado'),
-    ]
-    
-    document = models.ForeignKey(TechnicalDocument, on_delete=models.CASCADE, related_name='loans')
-    analyst = models.ForeignKey(User, on_delete=models.CASCADE, related_name='document_loans', verbose_name="Analista")
-    assistant = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='processed_loans', verbose_name="Asistente Administrativo")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='requested')
-    request_date = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Solicitud")
-    delivery_date = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Entrega")
-    expected_return_date = models.DateField(null=True, blank=True, verbose_name="Fecha Esperada de Devolución")
-    actual_return_date = models.DateTimeField(null=True, blank=True, verbose_name="Fecha Real de Devolución")
-    purpose = models.TextField(verbose_name="Propósito de la Consulta")
-    notes = models.TextField(blank=True, verbose_name="Notas/Observaciones")
-    analyst_signature = models.BooleanField(default=False, verbose_name="Firma del Analista")
-    return_verified = models.BooleanField(default=False, verbose_name="Verificación de Devolución")
-    
-    class Meta:
-        ordering = ['-request_date']
-        verbose_name = 'Préstamo de Documento'
-        verbose_name_plural = 'Préstamos de Documentos'
-    
-    def __str__(self):
-        return f"Préstamo: {self.document.code} - {self.analyst.get_full_name()}"
-
-
-class DocumentDraft(models.Model):
-    """
-    Modelo para Borradores de Documentación
-    Caso de Uso: REALIZA DOCUMENTACIÓN SOBRE UNA FUNCIONALIDAD O SISTEMA
-    Representa documentación en proceso de elaboración por analistas
-    """
-    DOCUMENT_TYPE_CHOICES = [
-        ('technical_manual', 'Manual Técnico'),
-        ('user_guide', 'Guía de Usuario'),
-        ('functional_spec', 'Especificación Funcional'),
-        ('procedure', 'Procedimiento Operativo'),
+        ('form', 'Formulario'),
+        ('report', 'Reporte'),
         ('other', 'Otro'),
     ]
     
     STATUS_CHOICES = [
         ('draft', 'Borrador'),
-        ('under_review', 'En Revisión'),
         ('pending_approval', 'Pendiente de Aprobación'),
         ('approved', 'Aprobado'),
         ('approved_with_observations', 'Aprobado con Observaciones'),
         ('rejected', 'Rechazado'),
         ('published', 'Publicado'),
+        ('archived', 'Archivado'),
     ]
     
-    title = models.CharField(max_length=300, verbose_name="Título")
-    document_type = models.CharField(max_length=20, choices=DOCUMENT_TYPE_CHOICES)
-    content = models.TextField(verbose_name="Contenido del Documento")
-    system_or_functionality = models.CharField(max_length=200, verbose_name="Sistema/Funcionalidad Documentada")
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='document_drafts', verbose_name="Analista Autor")
-    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='draft')
-    version = models.CharField(max_length=20, default='1.0')
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True)
+    # Basic document information
+    title = models.CharField(max_length=300, verbose_name="Título del Documento")
+    code = models.CharField(max_length=50, unique=True, verbose_name="Código de Documento")
+    description = models.TextField(blank=True, verbose_name="Descripción")
+    content = models.TextField(blank=True, verbose_name="Contenido del Documento")
+    document_type = models.CharField(max_length=20, choices=DOCUMENT_TYPE_CHOICES, default='manual')
+    version = models.CharField(max_length=20, default='1.0', verbose_name="Versión")
+    
+    # File attachment
     file = models.FileField(
-        upload_to='document_drafts/%Y/%m/',
+        upload_to='library_documents/%Y/%m/',
         blank=True,
         null=True,
-        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'doc', 'docx'])],
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'ppt', 'pptx'])],
         verbose_name="Archivo del Documento"
     )
-    submitted_at = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Envío a Revisión")
-    manager = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewing_drafts', verbose_name="Gerente Asignado")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     
-    class Meta:
-        ordering = ['-created_at']
-        verbose_name = 'Borrador de Documentación'
-        verbose_name_plural = 'Borradores de Documentación'
+    # Organization
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name='library_documents')
+    tags = models.CharField(max_length=500, blank=True, verbose_name="Etiquetas (separadas por coma)")
     
-    def __str__(self):
-        return f"{self.title} - {self.author.get_full_name()}"
-
-
-class DocumentApproval(models.Model):
-    """
-    Modelo para Aprobación de Documentación
-    Caso de Uso: APROBACIÓN DE LA DOCUMENTACIÓN
-    Registra el proceso de revisión y aprobación por gerentes
-    """
-    DECISION_CHOICES = [
+    # Authorship
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='authored_library_documents', verbose_name="Autor")
+    
+    # Status and workflow
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='draft')
+    submitted_at = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Envío a Aprobación")
+    
+    # Approval fields (approval done in same module)
+    # Note: For testing, approval is open to everyone. In production, only managers should approve.
+    approver = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_library_documents', verbose_name="Aprobador")
+    approval_decision = models.CharField(max_length=30, choices=[
         ('pending', 'Pendiente'),
         ('approved', 'Aprobado'),
         ('approved_with_observations', 'Aprobado con Observaciones'),
         ('rejected', 'Rechazado'),
-    ]
-    
-    document_draft = models.ForeignKey(DocumentDraft, on_delete=models.CASCADE, related_name='approvals')
-    reviewer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='document_reviews', verbose_name="Gerente Revisor")
-    assistant = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assisted_approvals', verbose_name="Asistente Administrativo")
-    decision = models.CharField(max_length=30, choices=DECISION_CHOICES, default='pending')
-    technical_observations = models.TextField(blank=True, verbose_name="Observaciones Técnicas")
+    ], default='pending', verbose_name="Decisión de Aprobación")
+    approval_observations = models.TextField(blank=True, verbose_name="Observaciones de Aprobación")
     corrections_required = models.TextField(blank=True, verbose_name="Correcciones Requeridas")
-    correction_deadline = models.DateField(null=True, blank=True, verbose_name="Plazo para Correcciones")
     rejection_reason = models.TextField(blank=True, verbose_name="Motivo de Rechazo")
-    approved_at = models.DateTimeField(null=True, blank=True)
-    validity_date = models.DateField(null=True, blank=True, verbose_name="Fecha de Vigencia")
-    requires_board_approval = models.BooleanField(default=False, verbose_name="Requiere Aprobación de Junta Directiva")
-    board_approved = models.BooleanField(default=False, verbose_name="Aprobado por Junta Directiva")
-    reviewer_signature = models.BooleanField(default=False, verbose_name="Firma del Revisor")
+    approved_at = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Aprobación")
+    
+    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    # Stats
+    download_count = models.IntegerField(default=0, verbose_name="Número de Descargas")
+    view_count = models.IntegerField(default=0, verbose_name="Número de Vistas")
+    
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Aprobación de Documento'
-        verbose_name_plural = 'Aprobaciones de Documentos'
+        verbose_name = 'Documento de Biblioteca'
+        verbose_name_plural = 'Biblioteca de Documentos'
     
     def __str__(self):
-        return f"Revisión: {self.document_draft.title} - {self.get_decision_display()}"
+        return f"{self.code} - {self.title}"
 
 
 class Policy(models.Model):

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from 'next/navigation';
 import { cn } from "@/lib/utils";
-import { FileText, GraduationCap, Home, ChevronRight, BookOpen, ClipboardCheck, FileCheck, ScrollText, Briefcase, CalendarDays } from 'lucide-react';
+import { FileText, GraduationCap, Home, ChevronRight, Library, ScrollText, Briefcase, CalendarDays } from 'lucide-react';
 import { useState } from "react";
 import type { NavGroup } from "@/types/navigation";
 
@@ -17,10 +17,7 @@ const navigation: NavGroup[] = [
   {
     title: "Documentación",
     items: [
-      { title: "Documentación Técnica", href: "/technical-documents", icon: BookOpen },
-      { title: "Préstamos de Documentos", href: "/document-loans", icon: FileText },
-      { title: "Elaboración de Docs", href: "/document-drafts", icon: ClipboardCheck },
-      { title: "Aprobación de Docs", href: "/document-approvals", icon: FileCheck },
+      { title: "Biblioteca de Documentos", href: "/library-documents", icon: Library },
     ],
   },
   {

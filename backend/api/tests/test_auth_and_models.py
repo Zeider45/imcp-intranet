@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from rest_framework import status
-from api.models import Department, UserProfile, Announcement, Document
+from api.models import Department, LibraryDocument
 
 
 class DepartmentModelTest(TestCase):
@@ -27,8 +27,8 @@ class DepartmentModelTest(TestCase):
         self.assertEqual(departments[1].name, "IT Department")
 
 
-class UserProfileModelTest(TestCase):
-    """Test cases for UserProfile model"""
+class LibraryDocumentModelTest(TestCase):
+    """Test cases for LibraryDocument model"""
     
     def setUp(self):
         self.user = User.objects.create_user(
@@ -38,57 +38,31 @@ class UserProfileModelTest(TestCase):
             last_name="User"
         )
         self.department = Department.objects.create(name="IT Department")
-        # Profile is automatically created by signal, just update it
-        self.profile = UserProfile.objects.get(user=self.user)
-        self.profile.department = self.department
-        self.profile.phone = "123-456-7890"
-        self.profile.position = "Developer"
-        self.profile.save()
-    
-    def test_profile_creation(self):
-        """Test user profile is created correctly"""
-        self.assertEqual(self.profile.user, self.user)
-        self.assertEqual(self.profile.department, self.department)
-        self.assertEqual(self.profile.position, "Developer")
-
-
-class AnnouncementModelTest(TestCase):
-    """Test cases for Announcement model"""
-    
-    def setUp(self):
-        self.user = User.objects.create_user(username="admin", email="admin@example.com")
-        self.announcement = Announcement.objects.create(
-            title="Test Announcement",
-            content="This is a test announcement",
+        self.document = LibraryDocument.objects.create(
+            title="Test Document",
+            code="DOC-001",
+            description="Test document description",
+            content="Test content",
+            document_type="manual",
             author=self.user,
-            priority="high"
+            department=self.department
         )
     
-    def test_announcement_creation(self):
-        """Test announcement is created correctly"""
-        self.assertEqual(self.announcement.title, "Test Announcement")
-        self.assertEqual(self.announcement.priority, "high")
-        self.assertTrue(self.announcement.is_active)
-
-
-class DocumentModelTest(TestCase):
-    """Test cases for Document model"""
-    
-    def setUp(self):
-        self.user = User.objects.create_user(username="uploader", email="uploader@example.com")
-        self.department = Department.objects.create(name="HR Department")
+    def test_document_creation(self):
+        """Test library document is created correctly"""
+        self.assertEqual(self.document.title, "Test Document")
+        self.assertEqual(self.document.code, "DOC-001")
+        self.assertEqual(self.document.author, self.user)
+        self.assertEqual(self.document.status, "draft")
     
     def test_document_str(self):
         """Test document string representation"""
-        from django.core.files.uploadedfile import SimpleUploadedFile
-        file = SimpleUploadedFile("test.txt", b"file content", content_type="text/plain")
-        document = Document.objects.create(
-            title="Test Document",
-            file=file,
-            category="policy",
-            uploaded_by=self.user
-        )
-        self.assertEqual(str(document), "Test Document")
+        self.assertEqual(str(self.document), "DOC-001 - Test Document")
+    
+    def test_document_default_status(self):
+        """Test document default status is draft"""
+        self.assertEqual(self.document.status, "draft")
+        self.assertEqual(self.document.approval_decision, "pending")
 
 
 class AuthenticationEndpointsTest(TestCase):
@@ -122,12 +96,6 @@ class AuthenticationEndpointsTest(TestCase):
             last_name="User"
         )
         self.department = Department.objects.create(name="IT Department")
-        # Profile is automatically created by signal, just update it
-        self.profile = UserProfile.objects.get(user=self.user)
-        self.profile.department = self.department
-        self.profile.position = "Developer"
-        self.profile.phone = "555-1234"
-        self.profile.save()
     
     def test_login_success(self):
         """Test successful login with valid credentials"""
@@ -164,7 +132,6 @@ class AuthenticationEndpointsTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['authenticated'])
         self.assertEqual(response.data['user']['username'], 'ldapuser')
-        self.assertIsNotNone(response.data['profile'])
     
     def test_current_user_not_authenticated(self):
         """Test getting current user when not authenticated"""
@@ -230,34 +197,118 @@ class APIEndpointsTest(TestCase):
         response = self.client.post('/api/departments/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['name'], 'New Department')
+
+
+class LibraryDocumentEndpointsTest(TestCase):
+    """Test cases for Library Document API endpoints"""
     
-    def test_announcement_list_endpoint(self):
-        """Test announcement list endpoint"""
-        Announcement.objects.create(
-            title="Test Announcement",
-            content="Test Content",
-            author=self.user
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            username="testuser",
+            email="test@example.com",
+            password="testpass123"
         )
-        response = self.client.get('/api/announcements/')
+        self.department = Department.objects.create(
+            name="Test Department",
+            description="Test Description"
+        )
+        
+        # Authenticate the client
+        self.client.force_authenticate(user=self.user)
+    
+    def test_library_document_list_endpoint(self):
+        """Test library document list endpoint"""
+        response = self.client.get('/api/library-documents/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
     
-    def test_announcement_active_endpoint(self):
-        """Test active announcements endpoint"""
-        Announcement.objects.create(
-            title="Active Announcement",
-            content="Active Content",
+    def test_library_document_create_endpoint(self):
+        """Test library document creation endpoint"""
+        data = {
+            'title': 'New Document',
+            'code': 'DOC-TEST-001',
+            'description': 'Test description',
+            'content': 'Test content',
+            'document_type': 'manual',
+            'version': '1.0',
+            'author': self.user.id
+        }
+        response = self.client.post('/api/library-documents/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['title'], 'New Document')
+        self.assertEqual(response.data['status'], 'draft')
+    
+    def test_library_document_submit_for_approval(self):
+        """Test submitting document for approval"""
+        document = LibraryDocument.objects.create(
+            title="Test Document",
+            code="DOC-TEST-002",
+            content="Test content",
+            document_type="manual",
             author=self.user,
-            is_active=True
+            status="draft"
         )
-        Announcement.objects.create(
-            title="Inactive Announcement",
-            content="Inactive Content",
-            author=self.user,
-            is_active=False
-        )
-        response = self.client.get('/api/announcements/active/')
+        response = self.client.post(f'/api/library-documents/{document.id}/submit_for_approval/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # All returned announcements should be active
-        for announcement in response.data.get('results', response.data):
-            if isinstance(announcement, dict):
-                self.assertTrue(announcement.get('is_active', True))
+        self.assertEqual(response.data['status'], 'pending_approval')
+    
+    def test_library_document_approve(self):
+        """Test approving document"""
+        document = LibraryDocument.objects.create(
+            title="Test Document",
+            code="DOC-TEST-003",
+            content="Test content",
+            document_type="manual",
+            author=self.user,
+            status="pending_approval"
+        )
+        response = self.client.post(f'/api/library-documents/{document.id}/approve/', {
+            'observations': 'Approved successfully'
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], 'approved')
+        self.assertEqual(response.data['approval_decision'], 'approved')
+    
+    def test_library_document_reject(self):
+        """Test rejecting document"""
+        document = LibraryDocument.objects.create(
+            title="Test Document",
+            code="DOC-TEST-004",
+            content="Test content",
+            document_type="manual",
+            author=self.user,
+            status="pending_approval"
+        )
+        response = self.client.post(f'/api/library-documents/{document.id}/reject/', {
+            'reason': 'Needs more work'
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], 'rejected')
+        self.assertEqual(response.data['approval_decision'], 'rejected')
+    
+    def test_library_document_publish(self):
+        """Test publishing approved document"""
+        document = LibraryDocument.objects.create(
+            title="Test Document",
+            code="DOC-TEST-005",
+            content="Test content",
+            document_type="manual",
+            author=self.user,
+            status="approved"
+        )
+        response = self.client.post(f'/api/library-documents/{document.id}/publish/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], 'published')
+    
+    def test_library_document_published_endpoint(self):
+        """Test published documents endpoint"""
+        LibraryDocument.objects.create(
+            title="Published Document",
+            code="DOC-TEST-006",
+            content="Test content",
+            document_type="manual",
+            author=self.user,
+            status="published"
+        )
+        response = self.client.get('/api/library-documents/published/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

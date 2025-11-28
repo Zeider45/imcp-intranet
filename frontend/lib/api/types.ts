@@ -44,112 +44,49 @@ export interface User {
 // BUSINESS PROCESS INTERFACES - IMCP USE CASES
 // ========================================
 
-// Consulta de Documentación
-export interface TechnicalDocument {
+// Biblioteca de Documentos Unificada
+export interface LibraryDocument {
   id: number;
   title: string;
   code: string;
   description: string;
+  content: string;
   document_type:
     | "manual"
     | "procedure"
     | "policy"
     | "guide"
     | "specification"
+    | "form"
+    | "report"
     | "other";
-  physical_location: string;
+  version: string;
+  file: string | null;
+  file_name: string | null;
+  file_size: number | null;
   department: number | null;
   department_name: string;
-  version: string;
-  status: "available" | "on_loan" | "archived" | "under_review";
-  authorized_users: number[];
-  authorized_user_names: string[];
-  file: string | null;
-  created_by: number;
-  created_by_name: string;
-  loan_count: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface DocumentLoan {
-  id: number;
-  document: number;
-  document_code: string;
-  document_title: string;
-  analyst: number;
-  analyst_name: string;
-  assistant: number | null;
-  assistant_name: string;
-  status:
-    | "requested"
-    | "approved"
-    | "delivered"
-    | "returned"
-    | "overdue"
-    | "cancelled";
-  request_date: string;
-  delivery_date: string | null;
-  expected_return_date: string | null;
-  actual_return_date: string | null;
-  purpose: string;
-  notes: string;
-  analyst_signature: boolean;
-  return_verified: boolean;
-}
-
-// Realiza y Aprueba Documentación
-export interface DocumentDraft {
-  id: number;
-  title: string;
-  document_type:
-    | "technical_manual"
-    | "user_guide"
-    | "functional_spec"
-    | "procedure"
-    | "other";
-  content: string;
-  system_or_functionality: string;
+  tags: string;
   author: number;
   author_name: string;
   status:
     | "draft"
-    | "under_review"
     | "pending_approval"
     | "approved"
     | "approved_with_observations"
     | "rejected"
-    | "published";
-  version: string;
-  department: number | null;
-  department_name: string;
-  file: string | null;
+    | "published"
+    | "archived";
   submitted_at: string | null;
-  manager: number | null;
-  manager_name: string;
-  approval_count: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface DocumentApproval {
-  id: number;
-  document_draft: number;
-  document_draft_title: string;
-  reviewer: number;
-  reviewer_name: string;
-  assistant: number | null;
-  assistant_name: string;
-  decision: "pending" | "approved" | "approved_with_observations" | "rejected";
-  technical_observations: string;
+  approver: number | null;
+  approver_name: string;
+  approval_decision: "pending" | "approved" | "approved_with_observations" | "rejected";
+  approval_observations: string;
   corrections_required: string;
-  correction_deadline: string | null;
   rejection_reason: string;
   approved_at: string | null;
-  validity_date: string | null;
-  requires_board_approval: boolean;
-  board_approved: boolean;
-  reviewer_signature: boolean;
+  download_count: number;
+  view_count: number;
   created_at: string;
   updated_at: string;
 }

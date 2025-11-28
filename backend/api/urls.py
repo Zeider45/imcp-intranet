@@ -9,13 +9,9 @@ router = DefaultRouter()
 router.register(r'departments', views.DepartmentViewSet, basename='department')
 
 # Business Process Modules - IMCP Use Cases
-# Consulta de Documentación
-router.register(r'technical-documents', views.TechnicalDocumentViewSet, basename='technical-document')
-router.register(r'document-loans', views.DocumentLoanViewSet, basename='document-loan')
-
-# Realiza y Aprueba Documentación
-router.register(r'document-drafts', views.DocumentDraftViewSet, basename='document-draft')
-router.register(r'document-approvals', views.DocumentApprovalViewSet, basename='document-approval')
+# Biblioteca de Documentos Unificada (reemplaza Technical Documents, Document Drafts, Document Approvals)
+# Note: Document Loans has been removed completely
+router.register(r'library-documents', views.LibraryDocumentViewSet, basename='library-document')
 
 # Establecer Políticas
 router.register(r'policies', views.PolicyViewSet, basename='policy')
