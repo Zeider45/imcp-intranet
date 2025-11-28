@@ -63,6 +63,13 @@ import { libraryDocumentApi } from '@/lib/api';
 import { API_BASE_URL } from '@/lib/api/client';
 import type { LibraryDocument, PaginatedResponse } from '@/lib/api/types';
 
+// Utility function to format file size
+const formatFileSize = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
 const documentTypeLabels: Record<string, string> = {
   manual: 'Manual Técnico',
   procedure: 'Procedimiento',
@@ -658,7 +665,7 @@ export default function LibraryDocumentsPage() {
                   <File className="h-4 w-4" />
                   <span className="truncate">{selectedFile.name}</span>
                   <span className="text-muted-foreground">
-                    ({(selectedFile.size / 1024).toFixed(1)} KB)
+                    ({formatFileSize(selectedFile.size)})
                   </span>
                 </div>
               )}
@@ -773,7 +780,7 @@ export default function LibraryDocumentsPage() {
                   <span className="truncate">{selectedDocument.file_name || 'Archivo actual'}</span>
                   {selectedDocument.file_size && (
                     <span className="text-muted-foreground">
-                      ({(selectedDocument.file_size / 1024).toFixed(1)} KB)
+                      ({formatFileSize(selectedDocument.file_size)})
                     </span>
                   )}
                 </div>
@@ -796,7 +803,7 @@ export default function LibraryDocumentsPage() {
                   <Upload className="h-4 w-4 text-blue-600" />
                   <span className="truncate">{selectedFile.name}</span>
                   <span className="text-muted-foreground">
-                    ({(selectedFile.size / 1024).toFixed(1)} KB)
+                    ({formatFileSize(selectedFile.size)})
                   </span>
                   <span className="text-blue-600 text-xs">(nuevo)</span>
                 </div>
@@ -901,7 +908,7 @@ export default function LibraryDocumentsPage() {
                         <p className="font-medium truncate">{selectedDocument.file_name || 'Documento'}</p>
                         {selectedDocument.file_size && (
                           <p className="text-xs text-muted-foreground">
-                            {(selectedDocument.file_size / 1024).toFixed(1)} KB
+                            {formatFileSize(selectedDocument.file_size)}
                           </p>
                         )}
                       </div>
