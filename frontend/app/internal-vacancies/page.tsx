@@ -760,8 +760,8 @@ export default function InternalVacanciesPage() {
                   <span className="text-sm text-muted-foreground">Rango Salarial</span>
                   <p className="font-medium flex items-center gap-1">
                     <DollarSign className="h-4 w-4" />
-                    {selectedVacancy.salary_range_min?.toLocaleString() || '?'} - 
-                    {selectedVacancy.salary_range_max?.toLocaleString() || '?'}
+                    {selectedVacancy.salary_range_min?.toLocaleString() || 'No definido'} - 
+                    {selectedVacancy.salary_range_max?.toLocaleString() || 'No definido'}
                   </p>
                 </div>
               )}

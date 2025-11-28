@@ -555,7 +555,7 @@ export default function DocumentDraftsPage() {
               {selectedDraft?.title}
             </DialogTitle>
             <DialogDescription>
-              {documentTypeLabels[selectedDraft?.document_type || '']} - Versión {selectedDraft?.version}
+              {selectedDraft?.document_type ? documentTypeLabels[selectedDraft.document_type] : 'Documento'} - Versión {selectedDraft?.version || '1.0'}
             </DialogDescription>
           </DialogHeader>
           {selectedDraft && (

@@ -351,7 +351,7 @@ export default function TrainingSessionsPage() {
                     <TableCell>
                       <span className="flex items-center gap-1">
                         <Users className="h-3 w-3" />
-                        {session.confirmed_count}/{session.max_participants || '∞'}
+                        {session.confirmed_count}/{session.max_participants || 'Sin límite'}
                       </span>
                     </TableCell>
                     <TableCell>
