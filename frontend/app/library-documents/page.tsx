@@ -714,7 +714,7 @@ export default function LibraryDocumentsPage() {
                 <div>
                   <span className="text-sm text-muted-foreground">Etiquetas</span>
                   <div className="flex gap-1 mt-1 flex-wrap">
-                    {selectedDocument.tags.split(',').map((tag, i) => (
+                    {selectedDocument.tags.split(',').filter(tag => tag.trim()).map((tag, i) => (
                       <Badge key={i} variant="outline" className="text-xs">
                         {tag.trim()}
                       </Badge>

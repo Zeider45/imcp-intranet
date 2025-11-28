@@ -72,7 +72,14 @@ export const libraryDocumentApi = {
       }
     );
     if (!response.ok) {
-      return { error: "Error uploading document" };
+      let errorMessage = "Error uploading document";
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail || errorData.message || JSON.stringify(errorData);
+      } catch {
+        errorMessage = `Error ${response.status}: ${response.statusText}`;
+      }
+      return { error: errorMessage };
     }
     const data = await response.json();
     return { data };
@@ -94,7 +101,14 @@ export const libraryDocumentApi = {
       }
     );
     if (!response.ok) {
-      return { error: "Error updating document" };
+      let errorMessage = "Error updating document";
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail || errorData.message || JSON.stringify(errorData);
+      } catch {
+        errorMessage = `Error ${response.status}: ${response.statusText}`;
+      }
+      return { error: errorMessage };
     }
     const data = await response.json();
     return { data };

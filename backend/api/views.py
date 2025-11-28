@@ -229,17 +229,28 @@ class LibraryDocumentViewSet(viewsets.ModelViewSet):
     Unifica: Documentación Técnica, Elaboración de Docs y Aprobación de Docs
     Permite subir, ver, descargar archivos, y realizar elaboración y aprobación
     
-    Note: Para prueba la aprobación está disponible para todos. En producción,
-    solo los gerentes deberían poder aprobar documentos.
+    IMPORTANT: Permissions are set to AllowAny for testing purposes.
+    In production, set the LIBRARY_DOCS_PRODUCTION environment variable to 'true'
+    to enable proper permission checking (CanManageDocuments).
     """
     queryset = LibraryDocument.objects.select_related('department', 'author', 'approver').all()
     serializer_class = LibraryDocumentSerializer
-    permission_classes = [AllowAny]  # For testing - in production use CanManageDocuments
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['document_type', 'status', 'department', 'author', 'approval_decision']
     search_fields = ['title', 'code', 'description', 'content', 'tags']
     ordering_fields = ['code', 'title', 'created_at', 'updated_at', 'download_count', 'view_count']
     ordering = ['-created_at']
+    
+    def get_permissions(self):
+        """
+        Return permissions based on environment.
+        For testing: AllowAny
+        For production: CanManageDocuments (set LIBRARY_DOCS_PRODUCTION=true)
+        """
+        import os
+        if os.environ.get('LIBRARY_DOCS_PRODUCTION', '').lower() == 'true':
+            return [CanManageDocuments()]
+        return [AllowAny()]
     
     @action(detail=False, methods=['get'])
     def published(self, request):
