@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from 'next/navigation';
 import { cn } from "@/lib/utils";
-import { Building2, Users, Megaphone, FileText, Calendar, Plane, Wrench, GraduationCap, Lightbulb, MessageSquare, MessageCircle, BarChart3, Link2, FolderKanban, CheckSquare, Home, ChevronRight } from 'lucide-react';
+import { FileText, GraduationCap, Home, ChevronRight, BookOpen, ClipboardCheck, FileCheck, ScrollText, Briefcase, CalendarDays } from 'lucide-react';
 import { useState } from "react";
 import type { NavGroup } from "@/types/navigation";
 
@@ -15,43 +15,31 @@ const navigation: NavGroup[] = [
     ],
   },
   {
-    title: "Módulos Principales",
+    title: "Documentación",
     items: [
-      { title: "Departamentos", href: "/departamentos", icon: Building2 },
-      { title: "Perfiles", href: "/perfiles", icon: Users },
-      { title: "Anuncios", href: "/anuncios", icon: Megaphone, badge: 3 },
-      { title: "Documentos", href: "/documentos", icon: FileText },
+      { title: "Documentación Técnica", href: "/technical-documents", icon: BookOpen },
+      { title: "Préstamos de Documentos", href: "/document-loans", icon: FileText },
+      { title: "Elaboración de Docs", href: "/document-drafts", icon: ClipboardCheck },
+      { title: "Aprobación de Docs", href: "/document-approvals", icon: FileCheck },
     ],
   },
   {
-    title: "Gestión del Tiempo",
+    title: "Políticas y Normativas",
     items: [
-      { title: "Calendario", href: "/calendario", icon: Calendar },
-      { title: "Solicitudes", href: "/solicitudes", icon: Plane },
-      { title: "Recursos", href: "/recursos", icon: Wrench },
+      { title: "Políticas", href: "/policies", icon: ScrollText },
     ],
   },
   {
-    title: "Formación",
+    title: "Capacitación",
     items: [
-      { title: "Cursos", href: "/cursos", icon: GraduationCap },
-      { title: "Conocimiento", href: "/conocimiento", icon: Lightbulb },
+      { title: "Planes de Capacitación", href: "/training-plans", icon: GraduationCap },
+      { title: "Sesiones de Capacitación", href: "/training-sessions", icon: CalendarDays },
     ],
   },
   {
-    title: "Colaboración",
+    title: "Recursos Humanos",
     items: [
-      { title: "Foros", href: "/foros", icon: MessageSquare },
-      { title: "Sugerencias", href: "/sugerencias", icon: MessageCircle },
-    ],
-  },
-  {
-    title: "Herramientas",
-    items: [
-      { title: "KPIs", href: "/kpis", icon: BarChart3 },
-      { title: "Enlaces", href: "/enlaces", icon: Link2 },
-      { title: "Proyectos", href: "/proyectos", icon: FolderKanban },
-      { title: "Tareas", href: "/tareas", icon: CheckSquare, badge: 5 },
+      { title: "Vacantes Internas", href: "/internal-vacancies", icon: Briefcase },
     ],
   },
 ];
