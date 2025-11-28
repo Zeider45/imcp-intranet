@@ -837,166 +837,76 @@ DELETE /api/tasks/{id}/      - Eliminar tarea
 
 ## 📋 Módulos de Procesos de Negocio IMCP
 
-### 16. Consulta de Documentación Técnica
+### 16. Biblioteca de Documentos (Unificado)
 
-Sistema para gestionar y consultar la documentación técnica del IMCP.
+Sistema unificado para gestionar la documentación del IMCP. Este módulo reemplaza y unifica los antiguos módulos de:
+- Documentación Técnica
+- Elaboración de Documentación
+- Aprobación de Documentación
+
+**Nota:** El módulo de Préstamos de Documentos ha sido eliminado completamente.
 
 **Características:**
-- Catálogo de documentos técnicos (manuales, procedimientos, políticas)
-- Índice maestro con ubicación física
-- Sistema de autorización de acceso por usuario
-- Versiones y estados de documentos
-- Documentos digitalizados disponibles
+- Biblioteca centralizada de documentos
+- Subir, ver y descargar archivos
+- Elaboración de documentos con editor de contenido
+- Flujo de aprobación integrado (Aprobar, Aprobar con observaciones, Rechazar)
+- Estados del documento: borrador, pendiente de aprobación, aprobado, rechazado, publicado, archivado
+- Etiquetas para clasificación
+- Contador de vistas y descargas
+- La aprobación está disponible para todos (en producción, solo para gerentes)
 
 **Endpoints:**
 ```
-GET    /api/technical-documents/           - Listar documentos técnicos
-POST   /api/technical-documents/           - Crear documento técnico
-GET    /api/technical-documents/available/ - Documentos disponibles
-GET    /api/technical-documents/catalog/   - Catálogo de documentos
-GET    /api/technical-documents/{id}/      - Obtener documento específico
-PUT    /api/technical-documents/{id}/      - Actualizar documento
-DELETE /api/technical-documents/{id}/      - Eliminar documento
+GET    /api/library-documents/                      - Listar documentos
+POST   /api/library-documents/                      - Crear documento
+GET    /api/library-documents/published/            - Documentos publicados
+GET    /api/library-documents/my_documents/         - Mis documentos
+GET    /api/library-documents/pending_approval/     - Pendientes de aprobación
+GET    /api/library-documents/recent/               - Documentos recientes
+GET    /api/library-documents/{id}/                 - Obtener documento específico
+PUT    /api/library-documents/{id}/                 - Actualizar documento
+PATCH  /api/library-documents/{id}/                 - Actualización parcial
+DELETE /api/library-documents/{id}/                 - Eliminar documento
+POST   /api/library-documents/{id}/submit_for_approval/ - Enviar a aprobación
+POST   /api/library-documents/{id}/approve/         - Aprobar documento
+POST   /api/library-documents/{id}/approve_with_observations/ - Aprobar con observaciones
+POST   /api/library-documents/{id}/reject/          - Rechazar documento
+POST   /api/library-documents/{id}/publish/         - Publicar documento
+POST   /api/library-documents/{id}/archive/         - Archivar documento
+POST   /api/library-documents/{id}/increment_view/  - Incrementar contador de vistas
+POST   /api/library-documents/{id}/increment_download/ - Incrementar contador de descargas
 ```
 
-**Modelo TechnicalDocument:**
+**Modelo LibraryDocument:**
 ```python
 - title: CharField (max_length=300)
 - code: CharField (max_length=50, unique=True)
 - description: TextField (blank=True)
-- document_type: CharField (choices=['manual', 'procedure', 'policy', 'guide', 'specification', 'other'])
-- physical_location: CharField (max_length=200)
+- content: TextField (blank=True)
+- document_type: CharField (choices=['manual', 'procedure', 'policy', 'guide', 'specification', 'form', 'report', 'other'])
+- version: CharField (max_length=20, default='1.0')
+- file: FileField (upload_to='library_documents/', validators=[pdf, doc, docx, xls, xlsx, txt, ppt, pptx])
 - department: ForeignKey (Department, null=True)
-- version: CharField (max_length=20, default='1.0')
-- status: CharField (choices=['available', 'on_loan', 'archived', 'under_review'])
-- authorized_users: ManyToManyField (User)
-- file: FileField (optional)
-- created_by: ForeignKey (User)
-```
-
----
-
-### 17. Bitácora de Préstamos de Documentos
-
-Registro y control de préstamos de documentación técnica.
-
-**Características:**
-- Solicitud de préstamo de documentos
-- Flujo de aprobación por asistente administrativo
-- Registro de entrega y firma del analista
-- Control de fechas de devolución
-- Verificación de devolución de documentos
-- Alertas de documentos vencidos
-
-**Endpoints:**
-```
-GET    /api/document-loans/              - Listar préstamos
-POST   /api/document-loans/              - Solicitar préstamo
-GET    /api/document-loans/pending/      - Préstamos pendientes
-GET    /api/document-loans/overdue/      - Préstamos vencidos
-GET    /api/document-loans/{id}/         - Obtener préstamo específico
-POST   /api/document-loans/{id}/approve/ - Aprobar préstamo
-POST   /api/document-loans/{id}/deliver/ - Registrar entrega
-POST   /api/document-loans/{id}/return_document/ - Registrar devolución
-```
-
-**Modelo DocumentLoan:**
-```python
-- document: ForeignKey (TechnicalDocument)
-- analyst: ForeignKey (User)
-- assistant: ForeignKey (User, null=True)
-- status: CharField (choices=['requested', 'approved', 'delivered', 'returned', 'overdue', 'cancelled'])
-- request_date: DateTimeField (auto_now_add=True)
-- delivery_date: DateTimeField (null=True)
-- expected_return_date: DateField (null=True)
-- actual_return_date: DateTimeField (null=True)
-- purpose: TextField
-- analyst_signature: BooleanField (default=False)
-- return_verified: BooleanField (default=False)
-```
-
----
-
-### 18. Elaboración de Documentación
-
-Sistema para crear y gestionar borradores de documentación técnica.
-
-**Características:**
-- Plantillas según tipo de documento
-- Editor de contenido de documentación
-- Control de versiones de borradores
-- Envío para revisión al gerente
-- Estados: borrador, en revisión, aprobado, rechazado
-
-**Endpoints:**
-```
-GET    /api/document-drafts/                     - Listar borradores
-POST   /api/document-drafts/                     - Crear borrador
-GET    /api/document-drafts/my_drafts/           - Mis borradores
-GET    /api/document-drafts/pending_review/      - Pendientes de revisión
-GET    /api/document-drafts/{id}/                - Obtener borrador específico
-POST   /api/document-drafts/{id}/submit_for_review/ - Enviar a revisión
-PUT    /api/document-drafts/{id}/                - Actualizar borrador
-DELETE /api/document-drafts/{id}/                - Eliminar borrador
-```
-
-**Modelo DocumentDraft:**
-```python
-- title: CharField (max_length=300)
-- document_type: CharField (choices=['technical_manual', 'user_guide', 'functional_spec', 'procedure', 'other'])
-- content: TextField
-- system_or_functionality: CharField (max_length=200)
+- tags: CharField (max_length=500, blank=True)
 - author: ForeignKey (User)
-- status: CharField (choices=['draft', 'under_review', 'pending_approval', 'approved', 'approved_with_observations', 'rejected', 'published'])
-- version: CharField (max_length=20, default='1.0')
-- manager: ForeignKey (User, null=True)
+- status: CharField (choices=['draft', 'pending_approval', 'approved', 'approved_with_observations', 'rejected', 'published', 'archived'])
 - submitted_at: DateTimeField (null=True)
-```
-
----
-
-### 19. Aprobación de Documentación
-
-Sistema de revisión y aprobación de documentación técnica por gerentes.
-
-**Características:**
-- Bandeja de documentos pendientes de revisión
-- Decisiones: Aprobar, Aprobar con observaciones, Rechazar
-- Registro de observaciones técnicas
-- Establecimiento de plazos para correcciones
-- Firma digital del revisor
-
-**Endpoints:**
-```
-GET    /api/document-approvals/                     - Listar aprobaciones
-POST   /api/document-approvals/                     - Crear aprobación
-GET    /api/document-approvals/pending/             - Aprobaciones pendientes
-GET    /api/document-approvals/{id}/                - Obtener aprobación específica
-POST   /api/document-approvals/{id}/approve/        - Aprobar documento
-POST   /api/document-approvals/{id}/approve_with_observations/ - Aprobar con observaciones
-POST   /api/document-approvals/{id}/reject/         - Rechazar documento
-```
-
-**Modelo DocumentApproval:**
-```python
-- document_draft: ForeignKey (DocumentDraft)
-- reviewer: ForeignKey (User)
-- assistant: ForeignKey (User, null=True)
-- decision: CharField (choices=['pending', 'approved', 'approved_with_observations', 'rejected'])
-- technical_observations: TextField (blank=True)
+- approver: ForeignKey (User, null=True)
+- approval_decision: CharField (choices=['pending', 'approved', 'approved_with_observations', 'rejected'])
+- approval_observations: TextField (blank=True)
 - corrections_required: TextField (blank=True)
-- correction_deadline: DateField (null=True)
 - rejection_reason: TextField (blank=True)
 - approved_at: DateTimeField (null=True)
-- validity_date: DateField (null=True)
-- requires_board_approval: BooleanField (default=False)
-- board_approved: BooleanField (default=False)
-- reviewer_signature: BooleanField (default=False)
+- download_count: IntegerField (default=0)
+- view_count: IntegerField (default=0)
+- created_at: DateTimeField (auto_now_add=True)
+- updated_at: DateTimeField (auto_now=True)
 ```
 
 ---
 
-### 20. Establecer Políticas
+### 17. Establecer Políticas
 
 Sistema para crear, revisar y publicar políticas tecnológicas institucionales.
 

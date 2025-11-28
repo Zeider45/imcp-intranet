@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     Department,
     # Business Process Models
-    TechnicalDocument, DocumentLoan, DocumentDraft, DocumentApproval,
+    LibraryDocument,
     Policy, PolicyDistribution, TrainingPlan, TrainingProvider,
     TrainingQuotation, TrainingSession, TrainingAttendance,
     InternalVacancy, VacancyApplication, VacancyTransition
@@ -22,45 +22,35 @@ class DepartmentAdmin(admin.ModelAdmin):
 # BUSINESS PROCESS ADMIN - IMCP USE CASES
 # ========================================
 
-@admin.register(TechnicalDocument)
-class TechnicalDocumentAdmin(admin.ModelAdmin):
-    """Admin interface for TechnicalDocument model"""
-    list_display = ['code', 'title', 'document_type', 'status', 'department', 'created_by']
-    search_fields = ['code', 'title', 'description']
-    list_filter = ['document_type', 'status', 'department']
-    raw_id_fields = ['created_by']
-    filter_horizontal = ['authorized_users']
-    ordering = ['code']
-
-
-@admin.register(DocumentLoan)
-class DocumentLoanAdmin(admin.ModelAdmin):
-    """Admin interface for DocumentLoan model"""
-    list_display = ['document', 'analyst', 'status', 'request_date', 'expected_return_date']
-    search_fields = ['document__code', 'document__title', 'analyst__username']
-    list_filter = ['status', 'request_date']
-    raw_id_fields = ['document', 'analyst', 'assistant']
-    ordering = ['-request_date']
-
-
-@admin.register(DocumentDraft)
-class DocumentDraftAdmin(admin.ModelAdmin):
-    """Admin interface for DocumentDraft model"""
-    list_display = ['title', 'document_type', 'author', 'status', 'manager', 'created_at']
-    search_fields = ['title', 'content']
-    list_filter = ['document_type', 'status', 'department']
-    raw_id_fields = ['author', 'manager']
+@admin.register(LibraryDocument)
+class LibraryDocumentAdmin(admin.ModelAdmin):
+    """Admin interface for LibraryDocument model - Biblioteca de Documentos Unificada"""
+    list_display = ['code', 'title', 'document_type', 'status', 'department', 'author', 'approval_decision']
+    search_fields = ['code', 'title', 'description', 'content', 'tags']
+    list_filter = ['document_type', 'status', 'department', 'approval_decision']
+    raw_id_fields = ['author', 'approver']
     ordering = ['-created_at']
-
-
-@admin.register(DocumentApproval)
-class DocumentApprovalAdmin(admin.ModelAdmin):
-    """Admin interface for DocumentApproval model"""
-    list_display = ['document_draft', 'reviewer', 'decision', 'approved_at']
-    search_fields = ['document_draft__title', 'reviewer__username']
-    list_filter = ['decision', 'requires_board_approval', 'board_approved']
-    raw_id_fields = ['document_draft', 'reviewer', 'assistant']
-    ordering = ['-created_at']
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('title', 'code', 'description', 'content', 'document_type', 'version')
+        }),
+        ('Archivo y Organización', {
+            'fields': ('file', 'department', 'tags')
+        }),
+        ('Autoría', {
+            'fields': ('author',)
+        }),
+        ('Estado y Workflow', {
+            'fields': ('status', 'submitted_at')
+        }),
+        ('Aprobación', {
+            'fields': ('approver', 'approval_decision', 'approval_observations', 
+                      'corrections_required', 'rejection_reason', 'approved_at')
+        }),
+        ('Estadísticas', {
+            'fields': ('download_count', 'view_count')
+        }),
+    )
 
 
 @admin.register(Policy)

@@ -18,7 +18,7 @@ from .permissions import (
 from .models import (
     Department,
     # Business Process Models
-    TechnicalDocument, DocumentLoan, DocumentDraft, DocumentApproval,
+    LibraryDocument,
     Policy, PolicyDistribution, TrainingPlan, TrainingProvider,
     TrainingQuotation, TrainingSession, TrainingAttendance,
     InternalVacancy, VacancyApplication, VacancyTransition
@@ -27,10 +27,7 @@ from .serializers import (
     HealthCheckSerializer,
     DepartmentSerializer,
     # Business Process Serializers
-    TechnicalDocumentSerializer,
-    DocumentLoanSerializer,
-    DocumentDraftSerializer,
-    DocumentApprovalSerializer,
+    LibraryDocumentSerializer,
     PolicySerializer,
     PolicyDistributionSerializer,
     TrainingPlanSerializer,
@@ -225,245 +222,190 @@ class DepartmentViewSet(viewsets.ModelViewSet):
 # BUSINESS PROCESS VIEWSETS - IMCP USE CASES
 # ========================================
 
-class TechnicalDocumentViewSet(viewsets.ModelViewSet):
+class LibraryDocumentViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for TechnicalDocument model
-    Caso de Uso: CONSULTA DOCUMENTACIÓN
-    Gestión de documentación técnica del IMCP
+    ViewSet for LibraryDocument model
+    Biblioteca de Documentos Unificada
+    Unifica: Documentación Técnica, Elaboración de Docs y Aprobación de Docs
+    Permite subir, ver, descargar archivos, y realizar elaboración y aprobación
+    
+    Note: Para prueba la aprobación está disponible para todos. En producción,
+    solo los gerentes deberían poder aprobar documentos.
     """
-    queryset = TechnicalDocument.objects.select_related('department', 'created_by').prefetch_related('authorized_users').all()
-    serializer_class = TechnicalDocumentSerializer
-    permission_classes = [CanManageDocuments]
+    queryset = LibraryDocument.objects.select_related('department', 'author', 'approver').all()
+    serializer_class = LibraryDocumentSerializer
+    permission_classes = [AllowAny]  # For testing - in production use CanManageDocuments
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['document_type', 'status', 'department', 'created_by']
-    search_fields = ['title', 'code', 'description', 'physical_location']
-    ordering_fields = ['code', 'title', 'created_at']
-    ordering = ['code']
-    
-    @action(detail=False, methods=['get'])
-    def available(self, request):
-        """Get available documents for consultation"""
-        available_docs = self.queryset.filter(status='available')
-        page = self.paginate_queryset(available_docs)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(available_docs, many=True)
-        return Response(serializer.data)
-    
-    @action(detail=False, methods=['get'])
-    def catalog(self, request):
-        """Get document catalog (index master)"""
-        catalog = self.queryset.values('id', 'code', 'title', 'document_type', 'physical_location', 'status')
-        return Response(list(catalog))
-
-
-class DocumentLoanViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for DocumentLoan model
-    Caso de Uso: CONSULTA DOCUMENTACIÓN
-    Bitácora de préstamos de documentos
-    """
-    queryset = DocumentLoan.objects.select_related('document', 'analyst', 'assistant').all()
-    serializer_class = DocumentLoanSerializer
-    permission_classes = [IsOwnerOrManager]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['status', 'document', 'analyst', 'assistant']
-    search_fields = ['document__title', 'document__code', 'analyst__username', 'purpose']
-    ordering_fields = ['request_date', 'delivery_date', 'expected_return_date']
-    ordering = ['-request_date']
-    
-    @action(detail=False, methods=['get'])
-    def pending(self, request):
-        """Get pending loan requests"""
-        pending_loans = self.queryset.filter(status__in=['requested', 'approved'])
-        page = self.paginate_queryset(pending_loans)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(pending_loans, many=True)
-        return Response(serializer.data)
-    
-    @action(detail=False, methods=['get'])
-    def overdue(self, request):
-        """Get overdue loans"""
-        from django.utils import timezone
-        overdue_loans = self.queryset.filter(
-            status='delivered',
-            expected_return_date__lt=timezone.now().date()
-        )
-        serializer = self.get_serializer(overdue_loans, many=True)
-        return Response(serializer.data)
-    
-    @action(detail=True, methods=['post'])
-    def approve(self, request, pk=None):
-        """Approve a loan request"""
-        loan = self.get_object()
-        loan.status = 'approved'
-        loan.assistant = request.user
-        loan.save()
-        serializer = self.get_serializer(loan)
-        return Response(serializer.data)
-    
-    @action(detail=True, methods=['post'])
-    def deliver(self, request, pk=None):
-        """Mark document as delivered"""
-        loan = self.get_object()
-        loan.status = 'delivered'
-        from django.utils import timezone
-        loan.delivery_date = timezone.now()
-        loan.analyst_signature = True
-        loan.save()
-        # Update document status
-        loan.document.status = 'on_loan'
-        loan.document.save()
-        serializer = self.get_serializer(loan)
-        return Response(serializer.data)
-    
-    @action(detail=True, methods=['post'])
-    def return_document(self, request, pk=None):
-        """Mark document as returned"""
-        loan = self.get_object()
-        loan.status = 'returned'
-        from django.utils import timezone
-        loan.actual_return_date = timezone.now()
-        loan.return_verified = True
-        loan.save()
-        # Update document status
-        loan.document.status = 'available'
-        loan.document.save()
-        serializer = self.get_serializer(loan)
-        return Response(serializer.data)
-
-
-class DocumentDraftViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for DocumentDraft model
-    Caso de Uso: REALIZA DOCUMENTACIÓN SOBRE UNA FUNCIONALIDAD O SISTEMA
-    Borradores de documentación técnica
-    """
-    queryset = DocumentDraft.objects.select_related('author', 'manager', 'department').all()
-    serializer_class = DocumentDraftSerializer
-    permission_classes = [IsOwnerOrManager]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['document_type', 'status', 'author', 'manager', 'department']
-    search_fields = ['title', 'content', 'system_or_functionality']
-    ordering_fields = ['created_at', 'submitted_at', 'title']
+    filterset_fields = ['document_type', 'status', 'department', 'author', 'approval_decision']
+    search_fields = ['title', 'code', 'description', 'content', 'tags']
+    ordering_fields = ['code', 'title', 'created_at', 'updated_at', 'download_count', 'view_count']
     ordering = ['-created_at']
     
     @action(detail=False, methods=['get'])
-    def my_drafts(self, request):
-        """Get drafts authored by current user"""
+    def published(self, request):
+        """Get published documents available for viewing/downloading"""
+        published_docs = self.queryset.filter(status='published')
+        page = self.paginate_queryset(published_docs)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(published_docs, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def my_documents(self, request):
+        """Get documents authored by current user"""
         if request.user.is_authenticated:
-            my_drafts = self.queryset.filter(author=request.user)
-            page = self.paginate_queryset(my_drafts)
+            my_docs = self.queryset.filter(author=request.user)
+            page = self.paginate_queryset(my_docs)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
                 return self.get_paginated_response(serializer.data)
-            serializer = self.get_serializer(my_drafts, many=True)
+            serializer = self.get_serializer(my_docs, many=True)
             return Response(serializer.data)
         return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
     
     @action(detail=False, methods=['get'])
-    def pending_review(self, request):
-        """Get drafts pending review for managers"""
+    def pending_approval(self, request):
+        """Get documents pending approval"""
         pending = self.queryset.filter(status='pending_approval')
-        if request.user.is_authenticated:
-            pending = pending.filter(manager=request.user)
         page = self.paginate_queryset(pending)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(pending, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def recent(self, request):
+        """Get recent documents (last 10)"""
+        recent_docs = self.queryset.filter(status='published').order_by('-created_at')[:10]
+        serializer = self.get_serializer(recent_docs, many=True)
         return Response(serializer.data)
     
     @action(detail=True, methods=['post'])
-    def submit_for_review(self, request, pk=None):
-        """Submit draft for manager review"""
-        draft = self.get_object()
-        draft.status = 'pending_approval'
+    def submit_for_approval(self, request, pk=None):
+        """Submit document for approval"""
+        document = self.get_object()
+        if document.status != 'draft':
+            return Response(
+                {'error': 'Solo se pueden enviar borradores para aprobación'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        document.status = 'pending_approval'
         from django.utils import timezone
-        draft.submitted_at = timezone.now()
-        if 'manager' in request.data:
-            from django.contrib.auth.models import User
-            from django.shortcuts import get_object_or_404
-            draft.manager = get_object_or_404(User, pk=request.data['manager'])
-        draft.save()
-        serializer = self.get_serializer(draft)
-        return Response(serializer.data)
-
-
-class DocumentApprovalViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for DocumentApproval model
-    Caso de Uso: APROBACIÓN DE LA DOCUMENTACIÓN
-    Proceso de aprobación de documentación
-    """
-    queryset = DocumentApproval.objects.select_related('document_draft', 'reviewer', 'assistant').all()
-    serializer_class = DocumentApprovalSerializer
-    permission_classes = [IsOwnerOrManager]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['decision', 'reviewer', 'document_draft', 'requires_board_approval', 'board_approved']
-    search_fields = ['document_draft__title', 'technical_observations', 'corrections_required']
-    ordering_fields = ['created_at', 'approved_at']
-    ordering = ['-created_at']
-    
-    @action(detail=False, methods=['get'])
-    def pending(self, request):
-        """Get pending approvals"""
-        pending = self.queryset.filter(decision='pending')
-        page = self.paginate_queryset(pending)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(pending, many=True)
+        document.submitted_at = timezone.now()
+        document.save()
+        serializer = self.get_serializer(document)
         return Response(serializer.data)
     
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
-        """Approve document"""
-        approval = self.get_object()
-        approval.decision = 'approved'
+        """
+        Approve document
+        Note: For testing, this is open to everyone. In production, only managers should approve.
+        """
+        document = self.get_object()
+        if document.status != 'pending_approval':
+            return Response(
+                {'error': 'Solo se pueden aprobar documentos pendientes de aprobación'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        document.status = 'approved'
+        document.approval_decision = 'approved'
         from django.utils import timezone
-        approval.approved_at = timezone.now()
-        approval.reviewer_signature = True
-        approval.technical_observations = request.data.get('observations', '')
-        approval.save()
-        # Update draft status
-        approval.document_draft.status = 'approved'
-        approval.document_draft.save()
-        serializer = self.get_serializer(approval)
+        document.approved_at = timezone.now()
+        if request.user.is_authenticated:
+            document.approver = request.user
+        document.approval_observations = request.data.get('observations', '')
+        document.save()
+        serializer = self.get_serializer(document)
         return Response(serializer.data)
     
     @action(detail=True, methods=['post'])
     def approve_with_observations(self, request, pk=None):
-        """Approve document with observations"""
-        approval = self.get_object()
-        approval.decision = 'approved_with_observations'
+        """
+        Approve document with observations
+        Note: For testing, this is open to everyone. In production, only managers should approve.
+        """
+        document = self.get_object()
+        if document.status != 'pending_approval':
+            return Response(
+                {'error': 'Solo se pueden aprobar documentos pendientes de aprobación'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        document.status = 'approved_with_observations'
+        document.approval_decision = 'approved_with_observations'
         from django.utils import timezone
-        approval.approved_at = timezone.now()
-        approval.reviewer_signature = True
-        approval.technical_observations = request.data.get('observations', '')
-        approval.corrections_required = request.data.get('corrections', '')
-        approval.correction_deadline = request.data.get('deadline')
-        approval.save()
-        # Update draft status
-        approval.document_draft.status = 'approved_with_observations'
-        approval.document_draft.save()
-        serializer = self.get_serializer(approval)
+        document.approved_at = timezone.now()
+        if request.user.is_authenticated:
+            document.approver = request.user
+        document.approval_observations = request.data.get('observations', '')
+        document.corrections_required = request.data.get('corrections', '')
+        document.save()
+        serializer = self.get_serializer(document)
         return Response(serializer.data)
     
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
-        """Reject document"""
-        approval = self.get_object()
-        approval.decision = 'rejected'
-        approval.rejection_reason = request.data.get('reason', '')
-        approval.save()
-        # Update draft status
-        approval.document_draft.status = 'rejected'
-        approval.document_draft.save()
-        serializer = self.get_serializer(approval)
+        """
+        Reject document
+        Note: For testing, this is open to everyone. In production, only managers should reject.
+        """
+        document = self.get_object()
+        if document.status != 'pending_approval':
+            return Response(
+                {'error': 'Solo se pueden rechazar documentos pendientes de aprobación'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        document.status = 'rejected'
+        document.approval_decision = 'rejected'
+        if request.user.is_authenticated:
+            document.approver = request.user
+        document.rejection_reason = request.data.get('reason', '')
+        document.save()
+        serializer = self.get_serializer(document)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def publish(self, request, pk=None):
+        """Publish an approved document"""
+        document = self.get_object()
+        if document.status not in ['approved', 'approved_with_observations']:
+            return Response(
+                {'error': 'Solo se pueden publicar documentos aprobados'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        document.status = 'published'
+        document.save()
+        serializer = self.get_serializer(document)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def archive(self, request, pk=None):
+        """Archive a document"""
+        document = self.get_object()
+        document.status = 'archived'
+        document.save()
+        serializer = self.get_serializer(document)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def increment_view(self, request, pk=None):
+        """Increment view count"""
+        document = self.get_object()
+        document.view_count += 1
+        document.save()
+        serializer = self.get_serializer(document)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def increment_download(self, request, pk=None):
+        """Increment download count"""
+        document = self.get_object()
+        document.download_count += 1
+        document.save()
+        serializer = self.get_serializer(document)
         return Response(serializer.data)
 
 

@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from .models import (
     Department,
     # Business Process Models
-    TechnicalDocument, DocumentLoan, DocumentDraft, DocumentApproval,
+    LibraryDocument,
     Policy, PolicyDistribution, TrainingPlan, TrainingProvider,
     TrainingQuotation, TrainingSession, TrainingAttendance,
     InternalVacancy, VacancyApplication, VacancyTransition
@@ -42,77 +42,39 @@ class UserSerializer(serializers.ModelSerializer):
 # BUSINESS PROCESS SERIALIZERS - IMCP USE CASES
 # ========================================
 
-class TechnicalDocumentSerializer(serializers.ModelSerializer):
-    """Serializer for TechnicalDocument model - Consulta Documentación"""
+class LibraryDocumentSerializer(serializers.ModelSerializer):
+    """
+    Serializer for LibraryDocument model - Biblioteca de Documentos Unificada
+    Unifica: Documentación Técnica, Elaboración de Docs y Aprobación de Docs
+    """
     department_name = serializers.CharField(source='department.name', read_only=True)
-    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
-    authorized_user_names = serializers.SerializerMethodField()
-    loan_count = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = TechnicalDocument
-        fields = ['id', 'title', 'code', 'description', 'document_type', 'physical_location',
-                  'department', 'department_name', 'version', 'status', 'authorized_users',
-                  'authorized_user_names', 'file', 'created_by', 'created_by_name',
-                  'loan_count', 'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at']
-    
-    def get_authorized_user_names(self, obj):
-        return [user.get_full_name() or user.username for user in obj.authorized_users.all()]
-    
-    def get_loan_count(self, obj):
-        return obj.loans.count()
-
-
-class DocumentLoanSerializer(serializers.ModelSerializer):
-    """Serializer for DocumentLoan model - Bitácora de Préstamos"""
-    document_code = serializers.CharField(source='document.code', read_only=True)
-    document_title = serializers.CharField(source='document.title', read_only=True)
-    analyst_name = serializers.CharField(source='analyst.get_full_name', read_only=True)
-    assistant_name = serializers.CharField(source='assistant.get_full_name', read_only=True)
-    
-    class Meta:
-        model = DocumentLoan
-        fields = ['id', 'document', 'document_code', 'document_title', 'analyst', 'analyst_name',
-                  'assistant', 'assistant_name', 'status', 'request_date', 'delivery_date',
-                  'expected_return_date', 'actual_return_date', 'purpose', 'notes',
-                  'analyst_signature', 'return_verified']
-        read_only_fields = ['request_date']
-
-
-class DocumentDraftSerializer(serializers.ModelSerializer):
-    """Serializer for DocumentDraft model - Realiza Documentación"""
     author_name = serializers.CharField(source='author.get_full_name', read_only=True)
-    manager_name = serializers.CharField(source='manager.get_full_name', read_only=True)
-    department_name = serializers.CharField(source='department.name', read_only=True)
-    approval_count = serializers.SerializerMethodField()
+    approver_name = serializers.CharField(source='approver.get_full_name', read_only=True)
+    file_name = serializers.SerializerMethodField()
+    file_size = serializers.SerializerMethodField()
     
     class Meta:
-        model = DocumentDraft
-        fields = ['id', 'title', 'document_type', 'content', 'system_or_functionality',
-                  'author', 'author_name', 'status', 'version', 'department', 'department_name',
-                  'file', 'submitted_at', 'manager', 'manager_name', 'approval_count',
-                  'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at']
+        model = LibraryDocument
+        fields = ['id', 'title', 'code', 'description', 'content', 'document_type',
+                  'version', 'file', 'file_name', 'file_size', 'department', 'department_name',
+                  'tags', 'author', 'author_name', 'status', 'submitted_at',
+                  'approver', 'approver_name', 'approval_decision', 'approval_observations',
+                  'corrections_required', 'rejection_reason', 'approved_at',
+                  'download_count', 'view_count', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at', 'download_count', 'view_count']
     
-    def get_approval_count(self, obj):
-        return obj.approvals.count()
-
-
-class DocumentApprovalSerializer(serializers.ModelSerializer):
-    """Serializer for DocumentApproval model - Aprobación de Documentación"""
-    document_draft_title = serializers.CharField(source='document_draft.title', read_only=True)
-    reviewer_name = serializers.CharField(source='reviewer.get_full_name', read_only=True)
-    assistant_name = serializers.CharField(source='assistant.get_full_name', read_only=True)
+    def get_file_name(self, obj):
+        if obj.file:
+            return obj.file.name.split('/')[-1]
+        return None
     
-    class Meta:
-        model = DocumentApproval
-        fields = ['id', 'document_draft', 'document_draft_title', 'reviewer', 'reviewer_name',
-                  'assistant', 'assistant_name', 'decision', 'technical_observations',
-                  'corrections_required', 'correction_deadline', 'rejection_reason',
-                  'approved_at', 'validity_date', 'requires_board_approval', 'board_approved',
-                  'reviewer_signature', 'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at']
+    def get_file_size(self, obj):
+        if obj.file:
+            try:
+                return obj.file.size
+            except Exception:
+                return None
+        return None
 
 
 class PolicySerializer(serializers.ModelSerializer):

@@ -1,9 +1,6 @@
 import { fetchApi } from "./client";
 import {
-  TechnicalDocument,
-  DocumentLoan,
-  DocumentDraft,
-  DocumentApproval,
+  LibraryDocument,
   Policy,
   PolicyDistribution,
   TrainingPlan,
@@ -18,256 +15,156 @@ import {
 } from "./types";
 
 // ========================================
-// CONSULTA DE DOCUMENTACIÓN APIs
+// BIBLIOTECA DE DOCUMENTOS UNIFICADA API
 // ========================================
 
-export const technicalDocumentApi = {
+export const libraryDocumentApi = {
   list: async (params?: {
     search?: string;
     document_type?: string;
     status?: string;
     department?: number;
+    approval_decision?: string;
     ordering?: string;
   }) => {
     const queryParams = new URLSearchParams(
       params as unknown as Record<string, string>
     );
-    return fetchApi<PaginatedResponse<TechnicalDocument>>(
-      `/api/technical-documents/?${queryParams}`
+    return fetchApi<PaginatedResponse<LibraryDocument>>(
+      `/api/library-documents/?${queryParams}`
     );
   },
-  available: async () => {
-    return fetchApi<PaginatedResponse<TechnicalDocument>>(
-      "/api/technical-documents/available/"
+  published: async () => {
+    return fetchApi<PaginatedResponse<LibraryDocument>>(
+      "/api/library-documents/published/"
     );
   },
-  catalog: async () => {
-    return fetchApi<
-      Array<{
-        id: number;
-        code: string;
-        title: string;
-        document_type: string;
-        physical_location: string;
-        status: string;
-      }>
-    >("/api/technical-documents/catalog/");
+  myDocuments: async () => {
+    return fetchApi<PaginatedResponse<LibraryDocument>>(
+      "/api/library-documents/my_documents/"
+    );
+  },
+  pendingApproval: async () => {
+    return fetchApi<PaginatedResponse<LibraryDocument>>(
+      "/api/library-documents/pending_approval/"
+    );
+  },
+  recent: async () => {
+    return fetchApi<LibraryDocument[]>("/api/library-documents/recent/");
   },
   get: async (id: number) => {
-    return fetchApi<TechnicalDocument>(`/api/technical-documents/${id}/`);
+    return fetchApi<LibraryDocument>(`/api/library-documents/${id}/`);
   },
-  create: async (data: Partial<TechnicalDocument>) => {
-    return fetchApi<TechnicalDocument>("/api/technical-documents/", {
+  create: async (data: Partial<LibraryDocument>) => {
+    return fetchApi<LibraryDocument>("/api/library-documents/", {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
-  update: async (id: number, data: Partial<TechnicalDocument>) => {
-    return fetchApi<TechnicalDocument>(`/api/technical-documents/${id}/`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    });
-  },
-  delete: async (id: number) => {
-    return fetchApi<void>(`/api/technical-documents/${id}/`, {
-      method: "DELETE",
-    });
-  },
-};
-
-export const documentLoanApi = {
-  list: async (params?: {
-    search?: string;
-    status?: string;
-    document?: number;
-    analyst?: number;
-    ordering?: string;
-  }) => {
-    const queryParams = new URLSearchParams(
-      params as unknown as Record<string, string>
-    );
-    return fetchApi<PaginatedResponse<DocumentLoan>>(
-      `/api/document-loans/?${queryParams}`
-    );
-  },
-  pending: async () => {
-    return fetchApi<PaginatedResponse<DocumentLoan>>(
-      "/api/document-loans/pending/"
-    );
-  },
-  overdue: async () => {
-    return fetchApi<DocumentLoan[]>("/api/document-loans/overdue/");
-  },
-  get: async (id: number) => {
-    return fetchApi<DocumentLoan>(`/api/document-loans/${id}/`);
-  },
-  create: async (data: Partial<DocumentLoan>) => {
-    return fetchApi<DocumentLoan>("/api/document-loans/", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  },
-  approve: async (id: number) => {
-    return fetchApi<DocumentLoan>(`/api/document-loans/${id}/approve/`, {
-      method: "POST",
-    });
-  },
-  deliver: async (id: number) => {
-    return fetchApi<DocumentLoan>(`/api/document-loans/${id}/deliver/`, {
-      method: "POST",
-    });
-  },
-  returnDocument: async (id: number) => {
-    return fetchApi<DocumentLoan>(`/api/document-loans/${id}/return_document/`, {
-      method: "POST",
-    });
-  },
-  update: async (id: number, data: Partial<DocumentLoan>) => {
-    return fetchApi<DocumentLoan>(`/api/document-loans/${id}/`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    });
-  },
-  delete: async (id: number) => {
-    return fetchApi<void>(`/api/document-loans/${id}/`, {
-      method: "DELETE",
-    });
-  },
-};
-
-// ========================================
-// REALIZA Y APRUEBA DOCUMENTACIÓN APIs
-// ========================================
-
-export const documentDraftApi = {
-  list: async (params?: {
-    search?: string;
-    document_type?: string;
-    status?: string;
-    author?: number;
-    manager?: number;
-    ordering?: string;
-  }) => {
-    const queryParams = new URLSearchParams(
-      params as unknown as Record<string, string>
-    );
-    return fetchApi<PaginatedResponse<DocumentDraft>>(
-      `/api/document-drafts/?${queryParams}`
-    );
-  },
-  myDrafts: async () => {
-    return fetchApi<PaginatedResponse<DocumentDraft>>(
-      "/api/document-drafts/my_drafts/"
-    );
-  },
-  pendingReview: async () => {
-    return fetchApi<PaginatedResponse<DocumentDraft>>(
-      "/api/document-drafts/pending_review/"
-    );
-  },
-  get: async (id: number) => {
-    return fetchApi<DocumentDraft>(`/api/document-drafts/${id}/`);
-  },
-  create: async (data: Partial<DocumentDraft>) => {
-    return fetchApi<DocumentDraft>("/api/document-drafts/", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  },
-  submitForReview: async (id: number, managerId?: number) => {
-    return fetchApi<DocumentDraft>(
-      `/api/document-drafts/${id}/submit_for_review/`,
+  createWithFile: async (formData: FormData) => {
+    // For file uploads, we need to use multipart/form-data
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/library-documents/`,
       {
         method: "POST",
-        body: JSON.stringify({ manager: managerId }),
+        body: formData,
+        credentials: "include",
       }
     );
+    if (!response.ok) {
+      return { error: "Error uploading document" };
+    }
+    const data = await response.json();
+    return { data };
   },
-  update: async (id: number, data: Partial<DocumentDraft>) => {
-    return fetchApi<DocumentDraft>(`/api/document-drafts/${id}/`, {
+  update: async (id: number, data: Partial<LibraryDocument>) => {
+    return fetchApi<LibraryDocument>(`/api/library-documents/${id}/`, {
       method: "PATCH",
       body: JSON.stringify(data),
     });
   },
+  updateWithFile: async (id: number, formData: FormData) => {
+    // For file uploads, we need to use multipart/form-data
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/library-documents/${id}/`,
+      {
+        method: "PATCH",
+        body: formData,
+        credentials: "include",
+      }
+    );
+    if (!response.ok) {
+      return { error: "Error updating document" };
+    }
+    const data = await response.json();
+    return { data };
+  },
   delete: async (id: number) => {
-    return fetchApi<void>(`/api/document-drafts/${id}/`, {
+    return fetchApi<void>(`/api/library-documents/${id}/`, {
       method: "DELETE",
     });
   },
-};
-
-export const documentApprovalApi = {
-  list: async (params?: {
-    search?: string;
-    decision?: string;
-    reviewer?: number;
-    document_draft?: number;
-    ordering?: string;
-  }) => {
-    const queryParams = new URLSearchParams(
-      params as unknown as Record<string, string>
+  submitForApproval: async (id: number) => {
+    return fetchApi<LibraryDocument>(
+      `/api/library-documents/${id}/submit_for_approval/`,
+      {
+        method: "POST",
+      }
     );
-    return fetchApi<PaginatedResponse<DocumentApproval>>(
-      `/api/document-approvals/?${queryParams}`
-    );
-  },
-  pending: async () => {
-    return fetchApi<PaginatedResponse<DocumentApproval>>(
-      "/api/document-approvals/pending/"
-    );
-  },
-  get: async (id: number) => {
-    return fetchApi<DocumentApproval>(`/api/document-approvals/${id}/`);
-  },
-  create: async (data: Partial<DocumentApproval>) => {
-    return fetchApi<DocumentApproval>("/api/document-approvals/", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
   },
   approve: async (id: number, observations?: string) => {
-    return fetchApi<DocumentApproval>(
-      `/api/document-approvals/${id}/approve/`,
-      {
-        method: "POST",
-        body: JSON.stringify({ observations }),
-      }
-    );
+    return fetchApi<LibraryDocument>(`/api/library-documents/${id}/approve/`, {
+      method: "POST",
+      body: JSON.stringify({ observations }),
+    });
   },
   approveWithObservations: async (
     id: number,
     observations: string,
-    corrections: string,
-    deadline?: string
+    corrections: string
   ) => {
-    return fetchApi<DocumentApproval>(
-      `/api/document-approvals/${id}/approve_with_observations/`,
+    return fetchApi<LibraryDocument>(
+      `/api/library-documents/${id}/approve_with_observations/`,
       {
         method: "POST",
         body: JSON.stringify({
           observations,
           corrections,
-          deadline,
         }),
       }
     );
   },
   reject: async (id: number, reason: string) => {
-    return fetchApi<DocumentApproval>(`/api/document-approvals/${id}/reject/`, {
+    return fetchApi<LibraryDocument>(`/api/library-documents/${id}/reject/`, {
       method: "POST",
       body: JSON.stringify({ reason }),
     });
   },
-  update: async (id: number, data: Partial<DocumentApproval>) => {
-    return fetchApi<DocumentApproval>(`/api/document-approvals/${id}/`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
+  publish: async (id: number) => {
+    return fetchApi<LibraryDocument>(`/api/library-documents/${id}/publish/`, {
+      method: "POST",
     });
   },
-  delete: async (id: number) => {
-    return fetchApi<void>(`/api/document-approvals/${id}/`, {
-      method: "DELETE",
+  archive: async (id: number) => {
+    return fetchApi<LibraryDocument>(`/api/library-documents/${id}/archive/`, {
+      method: "POST",
     });
+  },
+  incrementView: async (id: number) => {
+    return fetchApi<LibraryDocument>(
+      `/api/library-documents/${id}/increment_view/`,
+      {
+        method: "POST",
+      }
+    );
+  },
+  incrementDownload: async (id: number) => {
+    return fetchApi<LibraryDocument>(
+      `/api/library-documents/${id}/increment_download/`,
+      {
+        method: "POST",
+      }
+    );
   },
 };
 
