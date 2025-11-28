@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,10 +55,20 @@ import {
   ThumbsDown,
   MessageSquare,
   BookOpen,
-  Archive
+  Archive,
+  File,
+  X
 } from 'lucide-react';
 import { libraryDocumentApi } from '@/lib/api';
+import { API_BASE_URL } from '@/lib/api/client';
 import type { LibraryDocument, PaginatedResponse } from '@/lib/api/types';
+
+// Utility function to format file size
+const formatFileSize = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
 
 const documentTypeLabels: Record<string, string> = {
   manual: 'Manual Técnico',
@@ -114,6 +124,9 @@ export default function LibraryDocumentsPage() {
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<LibraryDocument | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<{
     title: string;
     code: string;
@@ -164,22 +177,76 @@ export default function LibraryDocumentsPage() {
     fetchDocuments();
   }, [fetchDocuments]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setSelectedFile(file);
+  };
+
+  const clearSelectedFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleCreate = async () => {
-    const response = await libraryDocumentApi.create(formData);
-    if (response.data) {
-      setIsCreateDialogOpen(false);
-      resetForm();
-      fetchDocuments();
+    setIsSubmitting(true);
+    try {
+      let response;
+      if (selectedFile) {
+        const formDataToSend = new FormData();
+        formDataToSend.append('title', formData.title);
+        formDataToSend.append('code', formData.code);
+        formDataToSend.append('description', formData.description);
+        formDataToSend.append('content', formData.content);
+        formDataToSend.append('document_type', formData.document_type);
+        formDataToSend.append('version', formData.version);
+        formDataToSend.append('tags', formData.tags);
+        formDataToSend.append('file', selectedFile);
+        response = await libraryDocumentApi.createWithFile(formDataToSend);
+      } else {
+        response = await libraryDocumentApi.create(formData);
+      }
+      if (response.data) {
+        setIsCreateDialogOpen(false);
+        resetForm();
+        fetchDocuments();
+      } else if (response.error) {
+        alert(`Error: ${response.error}`);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleUpdate = async () => {
     if (!selectedDocument) return;
-    const response = await libraryDocumentApi.update(selectedDocument.id, formData);
-    if (response.data) {
-      setIsEditDialogOpen(false);
-      resetForm();
-      fetchDocuments();
+    setIsSubmitting(true);
+    try {
+      let response;
+      if (selectedFile) {
+        const formDataToSend = new FormData();
+        formDataToSend.append('title', formData.title);
+        formDataToSend.append('code', formData.code);
+        formDataToSend.append('description', formData.description);
+        formDataToSend.append('content', formData.content);
+        formDataToSend.append('document_type', formData.document_type);
+        formDataToSend.append('version', formData.version);
+        formDataToSend.append('tags', formData.tags);
+        formDataToSend.append('file', selectedFile);
+        response = await libraryDocumentApi.updateWithFile(selectedDocument.id, formDataToSend);
+      } else {
+        response = await libraryDocumentApi.update(selectedDocument.id, formData);
+      }
+      if (response.data) {
+        setIsEditDialogOpen(false);
+        resetForm();
+        fetchDocuments();
+      } else if (response.error) {
+        alert(`Error: ${response.error}`);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -251,7 +318,9 @@ export default function LibraryDocumentsPage() {
   const handleDownload = async (doc: LibraryDocument) => {
     if (doc.file) {
       await libraryDocumentApi.incrementDownload(doc.id);
-      window.open(doc.file, '_blank');
+      // Construct full URL for download
+      const fileUrl = doc.file.startsWith('http') ? doc.file : `${API_BASE_URL}${doc.file}`;
+      window.open(fileUrl, '_blank');
     }
   };
 
@@ -272,6 +341,10 @@ export default function LibraryDocumentsPage() {
       tags: '',
     });
     setSelectedDocument(null);
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const resetApprovalData = () => {
@@ -571,12 +644,50 @@ export default function LibraryDocumentsPage() {
                 rows={8}
               />
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Archivo Adjunto</label>
+              <div className="flex items-center gap-2">
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.ppt,.pptx"
+                  onChange={handleFileChange}
+                  className="flex-1"
+                />
+                {selectedFile && (
+                  <Button type="button" variant="ghost" size="icon" onClick={clearSelectedFile}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              {selectedFile && (
+                <div className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm">
+                  <File className="h-4 w-4" />
+                  <span className="truncate">{selectedFile.name}</span>
+                  <span className="text-muted-foreground">
+                    ({formatFileSize(selectedFile.size)})
+                  </span>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Formatos permitidos: PDF, DOC, DOCX, XLS, XLSX, TXT, PPT, PPTX
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleCreate}>Crear Documento</Button>
+            <Button onClick={handleCreate} disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Creando...
+                </>
+              ) : (
+                'Crear Documento'
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -661,12 +772,61 @@ export default function LibraryDocumentsPage() {
                 rows={8}
               />
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Archivo Adjunto</label>
+              {selectedDocument?.file && !selectedFile && (
+                <div className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm mb-2">
+                  <File className="h-4 w-4" />
+                  <span className="truncate">{selectedDocument.file_name || 'Archivo actual'}</span>
+                  {selectedDocument.file_size && (
+                    <span className="text-muted-foreground">
+                      ({formatFileSize(selectedDocument.file_size)})
+                    </span>
+                  )}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.ppt,.pptx"
+                  onChange={handleFileChange}
+                  className="flex-1"
+                />
+                {selectedFile && (
+                  <Button type="button" variant="ghost" size="icon" onClick={clearSelectedFile}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              {selectedFile && (
+                <div className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md text-sm">
+                  <Upload className="h-4 w-4 text-blue-600" />
+                  <span className="truncate">{selectedFile.name}</span>
+                  <span className="text-muted-foreground">
+                    ({formatFileSize(selectedFile.size)})
+                  </span>
+                  <span className="text-blue-600 text-xs">(nuevo)</span>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Formatos permitidos: PDF, DOC, DOCX, XLS, XLSX, TXT, PPT, PPTX
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleUpdate}>Guardar Cambios</Button>
+            <Button onClick={handleUpdate} disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                'Guardar Cambios'
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -739,11 +899,24 @@ export default function LibraryDocumentsPage() {
               {selectedDocument.file && (
                 <div>
                   <span className="text-sm text-muted-foreground">Archivo Adjunto</span>
-                  <div className="mt-1">
-                    <Button variant="outline" size="sm" onClick={() => handleDownload(selectedDocument)}>
-                      <Download className="h-4 w-4 mr-2" />
-                      {selectedDocument.file_name || 'Descargar archivo'}
-                    </Button>
+                  <div className="mt-1 p-3 bg-muted rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-background rounded-lg">
+                        <File className="h-6 w-6 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{selectedDocument.file_name || 'Documento'}</p>
+                        {selectedDocument.file_size && (
+                          <p className="text-xs text-muted-foreground">
+                            {formatFileSize(selectedDocument.file_size)}
+                          </p>
+                        )}
+                      </div>
+                      <Button variant="default" size="sm" onClick={() => handleDownload(selectedDocument)}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Descargar
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -945,6 +1118,7 @@ function DocumentsTable({
                 <TableHead>Autor</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Versión</TableHead>
+                <TableHead>Archivo</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -966,11 +1140,27 @@ function DocumentsTable({
                     </Badge>
                   </TableCell>
                   <TableCell>{doc.version}</TableCell>
+                  <TableCell>
+                    {doc.file ? (
+                      <Badge variant="secondary" className="gap-1">
+                        <File className="h-3 w-3" />
+                        Sí
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">-</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button variant="ghost" size="icon-sm" onClick={() => onView(doc)} title="Ver">
                         <Eye className="h-4 w-4" />
                       </Button>
+                      
+                      {doc.file && (
+                        <Button variant="ghost" size="icon-sm" onClick={() => onDownload(doc)} title="Descargar">
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      )}
                       
                       {doc.status === 'draft' && (
                         <>
@@ -1043,22 +1233,15 @@ function DocumentsTable({
                       )}
                       
                       {doc.status === 'published' && (
-                        <>
-                          {doc.file && (
-                            <Button variant="ghost" size="icon-sm" onClick={() => onDownload(doc)} title="Descargar">
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button 
-                            variant="ghost" 
-                            size="icon-sm" 
-                            onClick={() => onArchive(doc.id)}
-                            className="text-gray-600 hover:text-gray-700"
-                            title="Archivar"
-                          >
-                            <Archive className="h-4 w-4" />
-                          </Button>
-                        </>
+                        <Button 
+                          variant="ghost" 
+                          size="icon-sm" 
+                          onClick={() => onArchive(doc.id)}
+                          className="text-gray-600 hover:text-gray-700"
+                          title="Archivar"
+                        >
+                          <Archive className="h-4 w-4" />
+                        </Button>
                       )}
                     </div>
                   </TableCell>
