@@ -64,11 +64,10 @@ cp .env.example .env
 # Editar .env con tus configuraciones específicas
 ```
 
-5. Ejecutar migraciones (⚠️ **IMPORTANTE**: Este paso es obligatorio):
+5. Ejecutar migraciones:
 ```bash
 python manage.py migrate
 ```
-> **Nota**: Si no ejecutas las migraciones, recibirás errores como `no such table: api_librarydocument` al usar la API.
 
 6. Crear un superusuario (opcional):
 ```bash
