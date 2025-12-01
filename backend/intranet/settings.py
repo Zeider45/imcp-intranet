@@ -252,7 +252,7 @@ if HAS_DJANGO_AUTH_LDAP and AUTH_LDAP_SERVER_URI:
     # Enable START_TLS for plain LDAP connections (ldap://)
     # This encrypts the connection and satisfies AD's "strong authentication" requirement
     if AUTH_LDAP_SERVER_URI.startswith('ldap://'):
-        AUTH_LDAP_START_TLS = True
+        AUTH_LDAP_START_TLS = False
     
     # User Search
     AUTH_LDAP_USER_SEARCH = LDAPSearch(
