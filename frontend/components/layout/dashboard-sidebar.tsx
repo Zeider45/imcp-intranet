@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from 'next/navigation';
 import { cn } from "@/lib/utils";
-import { FileText, GraduationCap, Home, ChevronRight, Library, ScrollText, Briefcase, CalendarDays } from 'lucide-react';
+import { FileText, GraduationCap, Home, ChevronRight, Library, ScrollText, Briefcase, CalendarDays, MessageSquare } from 'lucide-react';
 import { useState } from "react";
 import type { NavGroup } from "@/types/navigation";
 
@@ -37,6 +37,12 @@ const navigation: NavGroup[] = [
     title: "Recursos Humanos",
     items: [
       { title: "Vacantes Internas", href: "/internal-vacancies", icon: Briefcase },
+    ],
+  },
+  {
+    title: "Comunidad",
+    items: [
+      { title: "Foro de Discusión", href: "/forum", icon: MessageSquare },
     ],
   },
 ];

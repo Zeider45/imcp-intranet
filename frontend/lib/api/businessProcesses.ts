@@ -11,6 +11,8 @@ import {
   InternalVacancy,
   VacancyApplication,
   VacancyTransition,
+  ForumCategory,
+  ForumPost,
   PaginatedResponse,
 } from "./types";
 
@@ -801,6 +803,122 @@ export const vacancyTransitionApi = {
   delete: async (id: number) => {
     return fetchApi<void>(`/api/vacancy-transitions/${id}/`, {
       method: "DELETE",
+    });
+  },
+};
+
+// ========================================
+// FORUM APIs
+// ========================================
+
+export const forumCategoryApi = {
+  list: async (params?: {
+    search?: string;
+    is_active?: boolean;
+    ordering?: string;
+  }) => {
+    const queryParams = new URLSearchParams(
+      params as unknown as Record<string, string>
+    );
+    return fetchApi<PaginatedResponse<ForumCategory>>(
+      `/api/forum-categories/?${queryParams}`
+    );
+  },
+  active: async () => {
+    return fetchApi<ForumCategory[]>("/api/forum-categories/active/");
+  },
+  get: async (id: number) => {
+    return fetchApi<ForumCategory>(`/api/forum-categories/${id}/`);
+  },
+  create: async (data: Partial<ForumCategory>) => {
+    return fetchApi<ForumCategory>("/api/forum-categories/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+  update: async (id: number, data: Partial<ForumCategory>) => {
+    return fetchApi<ForumCategory>(`/api/forum-categories/${id}/`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  },
+  delete: async (id: number) => {
+    return fetchApi<void>(`/api/forum-categories/${id}/`, {
+      method: "DELETE",
+    });
+  },
+};
+
+export const forumPostApi = {
+  list: async (params?: {
+    search?: string;
+    category?: number;
+    author?: number;
+    is_pinned?: boolean;
+    is_locked?: boolean;
+    parent_post?: number | null;
+    main_posts_only?: boolean;
+    ordering?: string;
+  }) => {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
+    return fetchApi<PaginatedResponse<ForumPost>>(
+      `/api/forum-posts/?${queryParams}`
+    );
+  },
+  pinned: async () => {
+    return fetchApi<ForumPost[]>("/api/forum-posts/pinned/");
+  },
+  recent: async () => {
+    return fetchApi<ForumPost[]>("/api/forum-posts/recent/");
+  },
+  popular: async () => {
+    return fetchApi<ForumPost[]>("/api/forum-posts/popular/");
+  },
+  get: async (id: number) => {
+    return fetchApi<ForumPost>(`/api/forum-posts/${id}/`);
+  },
+  getReplies: async (id: number) => {
+    return fetchApi<PaginatedResponse<ForumPost>>(
+      `/api/forum-posts/${id}/replies/`
+    );
+  },
+  create: async (data: Partial<ForumPost>) => {
+    return fetchApi<ForumPost>("/api/forum-posts/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+  update: async (id: number, data: Partial<ForumPost>) => {
+    return fetchApi<ForumPost>(`/api/forum-posts/${id}/`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  },
+  delete: async (id: number) => {
+    return fetchApi<void>(`/api/forum-posts/${id}/`, {
+      method: "DELETE",
+    });
+  },
+  incrementViews: async (id: number) => {
+    return fetchApi<ForumPost>(`/api/forum-posts/${id}/increment_views/`, {
+      method: "POST",
+    });
+  },
+  togglePin: async (id: number) => {
+    return fetchApi<ForumPost>(`/api/forum-posts/${id}/toggle_pin/`, {
+      method: "POST",
+    });
+  },
+  toggleLock: async (id: number) => {
+    return fetchApi<ForumPost>(`/api/forum-posts/${id}/toggle_lock/`, {
+      method: "POST",
     });
   },
 };

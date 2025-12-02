@@ -21,7 +21,9 @@ from .models import (
     LibraryDocument,
     Policy, PolicyDistribution, TrainingPlan, TrainingProvider,
     TrainingQuotation, TrainingSession, TrainingAttendance,
-    InternalVacancy, VacancyApplication, VacancyTransition
+    InternalVacancy, VacancyApplication, VacancyTransition,
+    # Forum Models
+    ForumCategory, ForumPost
 )
 from .serializers import (
     HealthCheckSerializer,
@@ -37,7 +39,10 @@ from .serializers import (
     TrainingAttendanceSerializer,
     InternalVacancySerializer,
     VacancyApplicationSerializer,
-    VacancyTransitionSerializer
+    VacancyTransitionSerializer,
+    # Forum Serializers
+    ForumCategorySerializer,
+    ForumPostSerializer
 )
 
 # Constants
@@ -918,5 +923,129 @@ class VacancyTransitionViewSet(viewsets.ModelViewSet):
         transition.file_updated = request.data.get('file_updated', True)
         transition.save()
         serializer = self.get_serializer(transition)
+        return Response(serializer.data)
+
+
+# ========================================
+# FORUM VIEWSETS
+# ========================================
+
+class ForumCategoryViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for ForumCategory model
+    Gestión de categorías de foro
+    """
+    queryset = ForumCategory.objects.all()
+    serializer_class = ForumCategorySerializer
+    permission_classes = [AllowAny]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['is_active']
+    search_fields = ['name', 'description']
+    ordering_fields = ['name', 'order', 'created_at']
+    ordering = ['order', 'name']
+    
+    @action(detail=False, methods=['get'])
+    def active(self, request):
+        """Get active forum categories"""
+        active_categories = self.queryset.filter(is_active=True)
+        serializer = self.get_serializer(active_categories, many=True)
+        return Response(serializer.data)
+
+
+class ForumPostViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for ForumPost model
+    Gestión de posts de foro
+    """
+    queryset = ForumPost.objects.select_related('category', 'author', 'parent_post').all()
+    serializer_class = ForumPostSerializer
+    permission_classes = [AllowAny]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['category', 'author', 'is_pinned', 'is_locked', 'parent_post']
+    search_fields = ['title', 'content']
+    ordering_fields = ['created_at', 'views_count', 'is_pinned']
+    ordering = ['-is_pinned', '-created_at']
+    
+    def get_queryset(self):
+        """
+        Optionally filter to only main posts (not replies)
+        """
+        queryset = super().get_queryset()
+        main_posts_only = self.request.query_params.get('main_posts_only', None)
+        if main_posts_only and main_posts_only.lower() == 'true':
+            queryset = queryset.filter(parent_post__isnull=True)
+        return queryset
+    
+    def perform_create(self, serializer):
+        """Set the author to the current user or a default user for testing"""
+        from django.contrib.auth.models import User
+        if self.request.user.is_authenticated:
+            serializer.save(author=self.request.user)
+        else:
+            # For testing purposes, use the first available user
+            default_user = User.objects.first()
+            if default_user:
+                serializer.save(author=default_user)
+            else:
+                raise ValueError("No users available to create post")
+    
+    @action(detail=False, methods=['get'])
+    def pinned(self, request):
+        """Get pinned posts"""
+        pinned_posts = self.queryset.filter(is_pinned=True, parent_post__isnull=True)
+        serializer = self.get_serializer(pinned_posts, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def recent(self, request):
+        """Get recent posts (last 10)"""
+        recent_posts = self.queryset.filter(parent_post__isnull=True).order_by('-created_at')[:10]
+        serializer = self.get_serializer(recent_posts, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def popular(self, request):
+        """Get most viewed posts"""
+        popular_posts = self.queryset.filter(parent_post__isnull=True).order_by('-views_count')[:10]
+        serializer = self.get_serializer(popular_posts, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'])
+    def replies(self, request, pk=None):
+        """Get replies for a post"""
+        post = self.get_object()
+        replies = ForumPost.objects.filter(parent_post=post).order_by('created_at')
+        page = self.paginate_queryset(replies)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(replies, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def increment_views(self, request, pk=None):
+        """Increment view count"""
+        post = self.get_object()
+        post.views_count += 1
+        post.save()
+        serializer = self.get_serializer(post)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def toggle_pin(self, request, pk=None):
+        """Toggle pinned status"""
+        post = self.get_object()
+        post.is_pinned = not post.is_pinned
+        post.save()
+        serializer = self.get_serializer(post)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def toggle_lock(self, request, pk=None):
+        """Toggle locked status"""
+        post = self.get_object()
+        post.is_locked = not post.is_locked
+        post.save()
+        serializer = self.get_serializer(post)
         return Response(serializer.data)
 
