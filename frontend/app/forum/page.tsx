@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,15 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { 
   MessageSquare, 
   Plus, 
@@ -129,11 +122,12 @@ export default function ForumPage() {
     event.stopPropagation(); // Prevent opening the post dialog
     const response = await forumPostApi.toggleLike(postId);
     if (response.data) {
+      const updatedPost = response.data;
       // Update the posts list with the new like count
-      setPosts(posts.map(p => p.id === postId ? response.data : p));
+      setPosts(posts.map(p => p.id === postId ? updatedPost : p));
       // Update selected post if it's the one being liked
       if (selectedPost && selectedPost.id === postId) {
-        setSelectedPost(response.data);
+        setSelectedPost(updatedPost);
       }
     }
   };
@@ -381,11 +375,14 @@ export default function ForumPage() {
             <div className="space-y-6 py-4">
               {/* Post image */}
               {selectedPost.image && (
-                <div className="rounded-lg overflow-hidden">
-                  <img 
+                <div className="rounded-lg overflow-hidden relative w-full" style={{ minHeight: '200px' }}>
+                  <Image 
                     src={selectedPost.image} 
                     alt={selectedPost.title}
+                    width={700}
+                    height={400}
                     className="w-full h-auto max-h-96 object-contain bg-muted"
+                    unoptimized
                   />
                 </div>
               )}

@@ -71,8 +71,6 @@ export default function AdminPage() {
     image: null as File | null,
   });
   
-  const [selectedPost, setSelectedPost] = useState<ForumPost | null>(null);
-  
   // Settings form
   const [settingsForm, setSettingsForm] = useState({
     forumName: 'ForoTech',
@@ -191,7 +189,6 @@ export default function AdminPage() {
       image: null,
     });
     setIsEditMode(false);
-    setSelectedPost(null);
   };
   const resetCategoryForm = () => {
     setCategoryForm({
