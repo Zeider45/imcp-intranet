@@ -291,17 +291,25 @@ class ForumPostSerializer(serializers.ModelSerializer):
     author_name = serializers.SerializerMethodField()
     author_username = serializers.CharField(source='author.username', read_only=True)
     replies_count = serializers.SerializerMethodField()
+    user_has_liked = serializers.SerializerMethodField()
     
     class Meta:
         model = ForumPost
-        fields = ['id', 'category', 'category_name', 'title', 'content', 
+        fields = ['id', 'category', 'category_name', 'title', 'content', 'image',
                   'author', 'author_name', 'author_username', 'parent_post', 
-                  'is_pinned', 'is_locked', 'views_count', 'replies_count',
+                  'is_pinned', 'is_locked', 'views_count', 'likes_count', 
+                  'user_has_liked', 'replies_count',
                   'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at', 'views_count', 'author']
+        read_only_fields = ['created_at', 'updated_at', 'views_count', 'likes_count', 'author']
     
     def get_author_name(self, obj):
         return obj.author.get_full_name() or obj.author.username
     
     def get_replies_count(self, obj):
         return obj.replies.count()
+    
+    def get_user_has_liked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.liked_by.filter(id=request.user.id).exists()
+        return False

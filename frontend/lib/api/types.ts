@@ -393,6 +393,7 @@ export interface ForumPost {
   category_name: string;
   title: string;
   content: string;
+  image?: string | null;
   author: number;
   author_name: string;
   author_username: string;
@@ -400,6 +401,8 @@ export interface ForumPost {
   is_pinned: boolean;
   is_locked: boolean;
   views_count: number;
+  likes_count: number;
+  user_has_liked: boolean;
   replies_count: number;
   created_at: string;
   updated_at: string;

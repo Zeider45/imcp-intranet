@@ -50,6 +50,7 @@ export default function AdminPage() {
   
   // Dialog states
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [isPostDialogOpen, setIsPostDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -62,6 +63,15 @@ export default function AdminPage() {
     is_active: true,
     order: 0,
   });
+  
+  const [postForm, setPostForm] = useState({
+    title: '',
+    content: '',
+    category: 0,
+    image: null as File | null,
+  });
+  
+  const [selectedPost, setSelectedPost] = useState<ForumPost | null>(null);
   
   // Settings form
   const [settingsForm, setSettingsForm] = useState({
@@ -137,7 +147,52 @@ export default function AdminPage() {
     fetchPosts(selectedCategory?.id);
   };
 
+  const handleCreatePost = async () => {
+    setIsSubmitting(true);
+    try {
+      if (postForm.image) {
+        // Use FormData for file upload
+        const formData = new FormData();
+        formData.append('title', postForm.title);
+        formData.append('content', postForm.content);
+        formData.append('category', postForm.category.toString());
+        formData.append('image', postForm.image);
+        
+        const response = await forumPostApi.createWithFile(formData);
+        if (response.data) {
+          setIsPostDialogOpen(false);
+          resetPostForm();
+          fetchPosts();
+        }
+      } else {
+        // Regular JSON post
+        const response = await forumPostApi.create({
+          title: postForm.title,
+          content: postForm.content,
+          category: postForm.category,
+        });
+        if (response.data) {
+          setIsPostDialogOpen(false);
+          resetPostForm();
+          fetchPosts();
+        }
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Form reset functions
+  const resetPostForm = () => {
+    setPostForm({
+      title: '',
+      content: '',
+      category: categories.length > 0 ? categories[0].id : 0,
+      image: null,
+    });
+    setIsEditMode(false);
+    setSelectedPost(null);
+  };
   const resetCategoryForm = () => {
     setCategoryForm({
       name: '',
@@ -234,6 +289,13 @@ export default function AdminPage() {
                   />
                   <Button variant="outline" onClick={() => fetchPosts()}>
                     <RefreshCw className="h-4 w-4" />
+                  </Button>
+                  <Button onClick={() => {
+                    resetPostForm();
+                    setIsPostDialogOpen(true);
+                  }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nuevo Post
                   </Button>
                 </div>
               </div>
@@ -525,6 +587,89 @@ export default function AdminPage() {
                 </>
               ) : (
                 isEditMode ? 'Guardar Cambios' : 'Crear Categoría'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Post Dialog */}
+      <Dialog open={isPostDialogOpen} onOpenChange={setIsPostDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Nuevo Post</DialogTitle>
+            <DialogDescription>
+              Crea un nuevo post para publicar en el foro
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Categoría *</label>
+              <Select 
+                value={postForm.category?.toString() || ''} 
+                onValueChange={(v) => setPostForm({ ...postForm, category: parseInt(v) })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccione una categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.filter(c => c.is_active).map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id.toString()}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Título *</label>
+              <Input
+                placeholder="Título del post"
+                value={postForm.title}
+                onChange={(e) => setPostForm({ ...postForm, title: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Contenido *</label>
+              <Textarea
+                placeholder="Escriba el contenido del post..."
+                value={postForm.content}
+                onChange={(e) => setPostForm({ ...postForm, content: e.target.value })}
+                rows={8}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Imagen (opcional)</label>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setPostForm({ ...postForm, image: file });
+                }}
+              />
+              {postForm.image && (
+                <p className="text-xs text-muted-foreground">
+                  Archivo seleccionado: {postForm.image.name}
+                </p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPostDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleCreatePost} 
+              disabled={isSubmitting || !postForm.title || !postForm.content || !postForm.category}
+            >
+              {isSubmitting ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Publicando...
+                </>
+              ) : (
+                'Publicar Post'
               )}
             </Button>
           </DialogFooter>

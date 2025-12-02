@@ -34,6 +34,8 @@ import {
   TrendingUp,
   Clock,
   Users,
+  Heart,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { forumCategoryApi, forumPostApi } from '@/lib/api';
 import type { ForumCategory, ForumPost, PaginatedResponse } from '@/lib/api/types';
@@ -48,19 +50,11 @@ export default function ForumPage() {
   const [selectedPost, setSelectedPost] = useState<ForumPost | null>(null);
   
   // Dialog states
-  const [isPostDialogOpen, setIsPostDialogOpen] = useState(false);
   const [isViewPostDialogOpen, setIsViewPostDialogOpen] = useState(false);
   const [isReplyDialogOpen, setIsReplyDialogOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Form data
-  const [postForm, setPostForm] = useState({
-    title: '',
-    content: '',
-    category: 0,
-  });
-  
   const [replyForm, setReplyForm] = useState({
     content: '',
   });
@@ -103,23 +97,6 @@ export default function ForumPage() {
   }, [fetchCategories, fetchPosts]);
 
   // Post handlers
-  const handleCreatePost = async () => {
-    setIsSubmitting(true);
-    try {
-      const response = isEditMode && selectedPost
-        ? await forumPostApi.update(selectedPost.id, postForm)
-        : await forumPostApi.create(postForm);
-      
-      if (response.data) {
-        setIsPostDialogOpen(false);
-        resetPostForm();
-        fetchPosts(selectedCategory?.id);
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleCreateReply = async () => {
     if (!selectedPost) return;
     setIsSubmitting(true);
@@ -148,14 +125,17 @@ export default function ForumPage() {
     setIsViewPostDialogOpen(true);
   };
 
-  // Form reset functions
-  const resetPostForm = () => {
-    setPostForm({
-      title: '',
-      content: '',
-      category: selectedCategory?.id || 0,
-    });
-    setIsEditMode(false);
+  const handleToggleLike = async (postId: number, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent opening the post dialog
+    const response = await forumPostApi.toggleLike(postId);
+    if (response.data) {
+      // Update the posts list with the new like count
+      setPosts(posts.map(p => p.id === postId ? response.data : p));
+      // Update selected post if it's the one being liked
+      if (selectedPost && selectedPost.id === postId) {
+        setSelectedPost(response.data);
+      }
+    }
   };
 
   const selectCategory = (category: ForumCategory) => {
@@ -185,14 +165,6 @@ export default function ForumPage() {
         <div className="flex gap-2">
           <Button variant="ghost" asChild>
             <Link href="/forum/admin">Admin</Link>
-          </Button>
-          <Button onClick={() => {
-            if (categories.length > 0) {
-              setPostForm({ ...postForm, category: categories[0].id });
-            }
-            setIsPostDialogOpen(true);
-          }}>
-            Nuevo Tema
           </Button>
         </div>
       </div>
@@ -260,19 +232,7 @@ export default function ForumPage() {
               <div className="text-center py-8 text-muted-foreground">
                 <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No se encontraron publicaciones</p>
-                <Button 
-                  variant="outline" 
-                  className="mt-4"
-                  onClick={() => {
-                    if (categories.length > 0) {
-                      setPostForm({ ...postForm, category: categories[0].id });
-                    }
-                    setIsPostDialogOpen(true);
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Crear primer tema
-                </Button>
+                <p className="text-sm mt-2">Los administradores pueden crear nuevos posts desde el panel de administración</p>
               </div>
             </Card>
           ) : (
@@ -297,6 +257,12 @@ export default function ForumPage() {
                               🔥 Hot
                             </Badge>
                           )}
+                          {post.image && (
+                            <Badge variant="outline" className="flex-shrink-0">
+                              <ImageIcon className="h-3 w-3 mr-1" />
+                              Imagen
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground">
                           por <span className="font-medium">{post.author_name}</span> en{" "}
@@ -314,6 +280,15 @@ export default function ForumPage() {
                         <Users className="h-4 w-4" />
                         <span>{post.views_count} vistas</span>
                       </div>
+                      <button
+                        onClick={(e) => handleToggleLike(post.id, e)}
+                        className={`flex items-center gap-2 hover:text-red-500 transition-colors ${
+                          post.user_has_liked ? 'text-red-500' : ''
+                        }`}
+                      >
+                        <Heart className={`h-4 w-4 ${post.user_has_liked ? 'fill-current' : ''}`} />
+                        <span>{post.likes_count} likes</span>
+                      </button>
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4" />
                         <span>{new Date(post.created_at).toLocaleDateString('es-ES')}</span>
@@ -372,75 +347,6 @@ export default function ForumPage() {
         </div>
       </div>
 
-      {/* Post Dialog */}
-      <Dialog open={isPostDialogOpen} onOpenChange={setIsPostDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>
-              {isEditMode ? 'Editar Publicación' : 'Nueva Publicación'}
-            </DialogTitle>
-            <DialogDescription>
-              {isEditMode ? 'Actualice el contenido de la publicación' : 'Cree una nueva publicación en el foro'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Categoría *</label>
-              <Select 
-                value={postForm.category?.toString() || ''} 
-                onValueChange={(v) => setPostForm({ ...postForm, category: parseInt(v) })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccione una categoría" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.filter(c => c.is_active).map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id.toString()}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Título *</label>
-              <Input
-                placeholder="Título de la publicación"
-                value={postForm.title}
-                onChange={(e) => setPostForm({ ...postForm, title: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Contenido *</label>
-              <Textarea
-                placeholder="Escriba el contenido de su publicación..."
-                value={postForm.content}
-                onChange={(e) => setPostForm({ ...postForm, content: e.target.value })}
-                rows={8}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsPostDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleCreatePost} 
-              disabled={isSubmitting || !postForm.title || !postForm.content || !postForm.category}
-            >
-              {isSubmitting ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Guardando...
-                </>
-              ) : (
-                isEditMode ? 'Guardar Cambios' : 'Publicar'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* View Post Dialog */}
       <Dialog open={isViewPostDialogOpen} onOpenChange={setIsViewPostDialogOpen}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
@@ -473,21 +379,41 @@ export default function ForumPage() {
           </DialogHeader>
           {selectedPost && (
             <div className="space-y-6 py-4">
+              {/* Post image */}
+              {selectedPost.image && (
+                <div className="rounded-lg overflow-hidden">
+                  <img 
+                    src={selectedPost.image} 
+                    alt={selectedPost.title}
+                    className="w-full h-auto max-h-96 object-contain bg-muted"
+                  />
+                </div>
+              )}
+              
               {/* Post content */}
               <div className="p-4 bg-muted rounded-lg">
                 <pre className="text-sm whitespace-pre-wrap font-sans">{selectedPost.content}</pre>
               </div>
               
-              {/* Stats */}
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1">
+              {/* Stats and Actions */}
+              <div className="flex items-center gap-4 text-sm">
+                <span className="flex items-center gap-1 text-muted-foreground">
                   <Eye className="h-4 w-4" />
                   {selectedPost.views_count} vistas
                 </span>
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1 text-muted-foreground">
                   <MessageCircle className="h-4 w-4" />
                   {selectedPost.replies_count} respuestas
                 </span>
+                <button
+                  onClick={() => handleToggleLike(selectedPost.id, { stopPropagation: () => {} } as React.MouseEvent)}
+                  className={`flex items-center gap-1 hover:text-red-500 transition-colors ${
+                    selectedPost.user_has_liked ? 'text-red-500' : 'text-muted-foreground'
+                  }`}
+                >
+                  <Heart className={`h-4 w-4 ${selectedPost.user_has_liked ? 'fill-current' : ''}`} />
+                  <span>{selectedPost.likes_count} likes</span>
+                </button>
               </div>
 
               {/* Replies Section */}

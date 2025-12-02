@@ -1042,4 +1042,29 @@ class ForumPostViewSet(viewsets.ModelViewSet):
         post.save()
         serializer = self.get_serializer(post)
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def toggle_like(self, request, pk=None):
+        """Toggle like status for current user"""
+        post = self.get_object()
+        user = request.user
+        
+        if not user.is_authenticated:
+            return Response(
+                {'error': 'Authentication required to like posts'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        if post.liked_by.filter(id=user.id).exists():
+            # Unlike
+            post.liked_by.remove(user)
+            post.likes_count = max(0, post.likes_count - 1)
+        else:
+            # Like
+            post.liked_by.add(user)
+            post.likes_count += 1
+        
+        post.save()
+        serializer = self.get_serializer(post)
+        return Response(serializer.data)
 
