@@ -5,15 +5,11 @@ import Link from "next/link"
 import {
   LayoutDashboard,
   MessageSquare,
-  Users,
   Settings,
   Trash2,
   Edit,
-  Eye,
-  EyeOff,
   Pin,
   PinOff,
-  AlertTriangle,
   RefreshCw,
   Plus,
 } from "lucide-react"
@@ -43,31 +39,7 @@ import {
 } from "@/components/ui/select"
 import { forumCategoryApi, forumPostApi } from '@/lib/api';
 import type { ForumCategory, ForumPost, PaginatedResponse } from '@/lib/api/types';
-
-const colorOptions = [
-  { value: 'blue', label: 'Azul', class: 'bg-blue-500' },
-  { value: 'green', label: 'Verde', class: 'bg-green-500' },
-  { value: 'red', label: 'Rojo', class: 'bg-red-500' },
-  { value: 'yellow', label: 'Amarillo', class: 'bg-yellow-500' },
-  { value: 'purple', label: 'Púrpura', class: 'bg-purple-500' },
-  { value: 'orange', label: 'Naranja', class: 'bg-orange-500' },
-  { value: 'pink', label: 'Rosa', class: 'bg-pink-500' },
-  { value: 'cyan', label: 'Cian', class: 'bg-cyan-500' },
-];
-
-const getColorClass = (color: string): string => {
-  const colorOption = colorOptions.find(c => c.value === color);
-  return colorOption?.class || 'bg-blue-500';
-};
-
-// Avatar images for demo
-const getAuthorAvatar = (authorName: string): string => {
-  const avatarMap: Record<string, string> = {
-    'Admin': '/admin-interface.svg',
-    'default': '/abstract-geometric-shapes.svg'
-  };
-  return avatarMap[authorName] || avatarMap['default'];
-};
+import { colorOptions, getColorClass } from '@/lib/forum-utils';
 
 export default function AdminPage() {
   const [categories, setCategories] = useState<ForumCategory[]>([]);
@@ -75,7 +47,6 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<ForumCategory | null>(null);
-  const [selectedPost, setSelectedPost] = useState<ForumPost | null>(null);
   
   // Dialog states
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
@@ -196,7 +167,6 @@ export default function AdminPage() {
 
   // Compute stats
   const totalPosts = categories.reduce((sum, cat) => sum + cat.posts_count, 0);
-  const totalReplies = posts.reduce((sum, p) => sum + p.replies_count, 0);
   const uniqueAuthors = new Set(posts.map(p => p.author)).size;
   const newPostsToday = posts.filter(p => {
     const today = new Date().toDateString();
@@ -204,10 +174,10 @@ export default function AdminPage() {
   }).length;
 
   const stats = [
-    { label: "Total Temas", value: totalPosts.toLocaleString(), change: "+12%", trend: "up" },
-    { label: "Usuarios Activos", value: uniqueAuthors.toString(), change: "+5%", trend: "up" },
-    { label: "Reportes Pendientes", value: "0", change: "-3%", trend: "down" },
-    { label: "Nuevos Hoy", value: newPostsToday.toString(), change: "+18%", trend: "up" },
+    { label: "Total Temas", value: totalPosts.toLocaleString() },
+    { label: "Usuarios Activos", value: uniqueAuthors.toString() },
+    { label: "Categorías Activas", value: categories.filter(c => c.is_active).length.toString() },
+    { label: "Nuevos Hoy", value: newPostsToday.toString() },
   ];
 
   return (
@@ -233,12 +203,9 @@ export default function AdminPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
           <Card key={stat.label} className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
-                <p className="text-3xl font-bold text-foreground mt-1">{stat.value}</p>
-              </div>
-              <Badge variant={stat.trend === "up" ? "default" : "secondary"}>{stat.change}</Badge>
+            <div>
+              <p className="text-sm text-muted-foreground">{stat.label}</p>
+              <p className="text-3xl font-bold text-foreground mt-1">{stat.value}</p>
             </div>
           </Card>
         ))}
