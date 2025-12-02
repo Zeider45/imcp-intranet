@@ -1058,12 +1058,12 @@ class ForumPostViewSet(viewsets.ModelViewSet):
         if post.liked_by.filter(id=user.id).exists():
             # Unlike
             post.liked_by.remove(user)
-            post.likes_count = max(0, post.likes_count - 1)
         else:
             # Like
             post.liked_by.add(user)
-            post.likes_count += 1
         
+        # Update likes count based on actual count
+        post.likes_count = post.liked_by.count()
         post.save()
         serializer = self.get_serializer(post)
         return Response(serializer.data)

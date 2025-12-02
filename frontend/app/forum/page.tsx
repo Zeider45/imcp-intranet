@@ -118,8 +118,10 @@ export default function ForumPage() {
     setIsViewPostDialogOpen(true);
   };
 
-  const handleToggleLike = async (postId: number, event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent opening the post dialog
+  const handleToggleLike = async (postId: number, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation(); // Prevent opening the post dialog
+    }
     const response = await forumPostApi.toggleLike(postId);
     if (response.data) {
       const updatedPost = response.data;
@@ -403,7 +405,7 @@ export default function ForumPage() {
                   {selectedPost.replies_count} respuestas
                 </span>
                 <button
-                  onClick={() => handleToggleLike(selectedPost.id, { stopPropagation: () => {} } as React.MouseEvent)}
+                  onClick={() => handleToggleLike(selectedPost.id)}
                   className={`flex items-center gap-1 hover:text-red-500 transition-colors ${
                     selectedPost.user_has_liked ? 'text-red-500' : 'text-muted-foreground'
                   }`}
