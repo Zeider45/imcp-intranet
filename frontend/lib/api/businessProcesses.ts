@@ -817,9 +817,14 @@ export const forumCategoryApi = {
     is_active?: boolean;
     ordering?: string;
   }) => {
-    const queryParams = new URLSearchParams(
-      params as unknown as Record<string, string>
-    );
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
     return fetchApi<PaginatedResponse<ForumCategory>>(
       `/api/forum-categories/?${queryParams}`
     );

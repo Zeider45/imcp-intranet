@@ -937,7 +937,7 @@ class ForumCategoryViewSet(viewsets.ModelViewSet):
     """
     queryset = ForumCategory.objects.all()
     serializer_class = ForumCategorySerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['is_active']
     search_fields = ['name', 'description']
@@ -959,7 +959,7 @@ class ForumPostViewSet(viewsets.ModelViewSet):
     """
     queryset = ForumPost.objects.select_related('category', 'author', 'parent_post').all()
     serializer_class = ForumPostSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsOwnerOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['category', 'author', 'is_pinned', 'is_locked', 'parent_post']
     search_fields = ['title', 'content']
@@ -977,17 +977,11 @@ class ForumPostViewSet(viewsets.ModelViewSet):
         return queryset
     
     def perform_create(self, serializer):
-        """Set the author to the current user or a default user for testing"""
-        from django.contrib.auth.models import User
+        """Set the author to the current user"""
         if self.request.user.is_authenticated:
             serializer.save(author=self.request.user)
         else:
-            # For testing purposes, use the first available user
-            default_user = User.objects.first()
-            if default_user:
-                serializer.save(author=default_user)
-            else:
-                raise ValueError("No users available to create post")
+            raise PermissionError("Authentication required to create posts")
     
     @action(detail=False, methods=['get'])
     def pinned(self, request):

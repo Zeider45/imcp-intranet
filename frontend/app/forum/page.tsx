@@ -125,11 +125,15 @@ export default function ForumPage() {
   // Fetch posts by category
   const fetchPosts = useCallback(async (categoryId?: number) => {
     setLoading(true);
-    const params: Record<string, string | boolean> = { main_posts_only: true };
-    if (categoryId) params.category = categoryId.toString();
+    const params: {
+      main_posts_only?: boolean;
+      category?: number;
+      search?: string;
+    } = { main_posts_only: true };
+    if (categoryId) params.category = categoryId;
     if (searchTerm) params.search = searchTerm;
     
-    const response = await forumPostApi.list(params as Record<string, string | number | boolean | null | undefined>);
+    const response = await forumPostApi.list(params);
     if (response.data) {
       setPosts((response.data as PaginatedResponse<ForumPost>).results || []);
     }
