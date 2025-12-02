@@ -42,7 +42,10 @@ import {
   Clock,
   CheckCircle,
   Globe,
-  Archive
+  Archive,
+  Gavel,
+  UserCheck,
+  Users
 } from 'lucide-react';
 import { policyApi } from '@/lib/api';
 import type { Policy, PaginatedResponse } from '@/lib/api/types';
@@ -157,6 +160,18 @@ export default function PoliciesPage() {
     }
   };
 
+  const handleApproveBoard = async (id: number) => {
+    const today = new Date().toISOString().split('T')[0];
+    if (confirm('¿Está seguro de aprobar esta política por la junta directiva?')) {
+      const response = await policyApi.approveBoard(id, today);
+      if (response.data) {
+        fetchPolicies();
+      } else if (response.error) {
+        alert(`Error al aprobar por junta directiva: ${response.error}`);
+      }
+    }
+  };
+
   const handlePublish = async (id: number) => {
     if (confirm('¿Está seguro de publicar esta política?')) {
       const response = await policyApi.publish(id);
@@ -216,7 +231,8 @@ export default function PoliciesPage() {
 
   const draftCount = policies.filter(p => p.status === 'draft').length;
   const publishedCount = policies.filter(p => p.status === 'published').length;
-  const reviewCount = policies.filter(p => ['under_review', 'pending_signatures'].includes(p.status)).length;
+  const reviewCount = policies.filter(p => ['under_review'].includes(p.status)).length;
+  const pendingSignaturesCount = policies.filter(p => p.status === 'pending_signatures').length;
 
   return (
     <div className="space-y-6">
@@ -238,7 +254,7 @@ export default function PoliciesPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
@@ -256,11 +272,24 @@ export default function PoliciesPage() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-                <Clock className="h-5 w-5 text-yellow-600" />
+                <UserCheck className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">En Revisión</p>
                 <p className="text-2xl font-bold">{reviewCount}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                <Gavel className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Pend. Firmas</p>
+                <p className="text-2xl font-bold">{pendingSignaturesCount}</p>
               </div>
             </div>
           </CardContent>
@@ -418,6 +447,17 @@ export default function PoliciesPage() {
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </>
+                        )}
+                        {policy.status === 'pending_signatures' && !policy.board_approved && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon-sm" 
+                            onClick={() => handleApproveBoard(policy.id)}
+                            className="text-purple-600 hover:text-purple-700"
+                            title="Aprobar por Junta Directiva"
+                          >
+                            <Gavel className="h-4 w-4" />
+                          </Button>
                         )}
                         {policy.status === 'approved' && (
                           <Button 

@@ -673,6 +673,72 @@ export default function InternalVacanciesPage() {
                 rows={2}
               />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Competencias *</label>
+                <Textarea
+                  placeholder="Competencias requeridas..."
+                  value={formData.competencies}
+                  onChange={(e) => setFormData({ ...formData, competencies: e.target.value })}
+                  rows={2}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Experiencia Mínima *</label>
+                <Input
+                  placeholder="3+ años en desarrollo"
+                  value={formData.experience_required}
+                  onChange={(e) => setFormData({ ...formData, experience_required: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Rango Salarial Mínimo</label>
+                <Input
+                  type="number"
+                  placeholder="30000"
+                  value={formData.salary_range_min}
+                  onChange={(e) => setFormData({ ...formData, salary_range_min: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Rango Salarial Máximo</label>
+                <Input
+                  type="number"
+                  placeholder="50000"
+                  value={formData.salary_range_max}
+                  onChange={(e) => setFormData({ ...formData, salary_range_max: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Fecha Requerida</label>
+                <Input
+                  type="date"
+                  value={formData.required_date}
+                  onChange={(e) => setFormData({ ...formData, required_date: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Fecha Límite de Postulación</label>
+                <Input
+                  type="date"
+                  value={formData.application_deadline}
+                  onChange={(e) => setFormData({ ...formData, application_deadline: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Justificación de la Solicitud *</label>
+              <Textarea
+                placeholder="Explique por qué se necesita cubrir esta vacante..."
+                value={formData.authorization_justification}
+                onChange={(e) => setFormData({ ...formData, authorization_justification: e.target.value })}
+                rows={2}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
