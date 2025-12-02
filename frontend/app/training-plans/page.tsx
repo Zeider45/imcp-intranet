@@ -361,6 +361,7 @@ export default function TrainingPlansPage() {
                   <TableHead>Origen</TableHead>
                   <TableHead>Modalidad</TableHead>
                   <TableHead>Duración</TableHead>
+                  <TableHead>Fechas</TableHead>
                   <TableHead>Presupuesto</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
@@ -369,7 +370,12 @@ export default function TrainingPlansPage() {
               <TableBody>
                 {plans.map((plan) => (
                   <TableRow key={plan.id}>
-                    <TableCell className="font-medium max-w-[200px] truncate">{plan.title}</TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium truncate max-w-[180px]">{plan.title}</p>
+                        <p className="text-xs text-muted-foreground">{scopeLabels[plan.scope]}</p>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline">
                         {originLabels[plan.origin] || plan.origin}
@@ -377,6 +383,23 @@ export default function TrainingPlansPage() {
                     </TableCell>
                     <TableCell>{modalityLabels[plan.modality]}</TableCell>
                     <TableCell>{plan.duration_hours}h</TableCell>
+                    <TableCell>
+                      {plan.planned_start_date ? (
+                        <div className="text-xs">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(plan.planned_start_date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+                          </span>
+                          {plan.planned_end_date && (
+                            <span className="text-muted-foreground">
+                              al {new Date(plan.planned_end_date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Sin programar</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       {plan.budget_amount ? (
                         <span className="flex items-center gap-1">

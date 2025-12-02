@@ -42,7 +42,11 @@ import {
   MapPin,
   Users,
   Play,
-  Check
+  Check,
+  Edit,
+  Trash2,
+  UserCheck,
+  Award
 } from 'lucide-react';
 import { trainingSessionApi, trainingPlanApi } from '@/lib/api';
 import type { TrainingSession, TrainingPlan, PaginatedResponse } from '@/lib/api/types';
@@ -78,6 +82,7 @@ export default function TrainingSessionsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<TrainingSession | null>(null);
   const [formData, setFormData] = useState({
@@ -131,6 +136,19 @@ export default function TrainingSessionsPage() {
     }
   };
 
+  const handleUpdate = async () => {
+    if (!selectedSession) return;
+    const response = await trainingSessionApi.update(selectedSession.id, {
+      ...formData,
+      max_participants: formData.max_participants ? Number(formData.max_participants) : undefined,
+    });
+    if (response.data) {
+      setIsEditDialogOpen(false);
+      resetForm();
+      fetchSessions();
+    }
+  };
+
   const handleConfirm = async (id: number) => {
     const response = await trainingSessionApi.confirm(id);
     if (response.data) {
@@ -144,6 +162,13 @@ export default function TrainingSessionsPage() {
       if (response.data) {
         fetchSessions();
       }
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (confirm('¿Está seguro de eliminar esta sesión?')) {
+      await trainingSessionApi.delete(id);
+      fetchSessions();
     }
   };
 
@@ -161,6 +186,7 @@ export default function TrainingSessionsPage() {
       materials_required: '',
       objectives: '',
     });
+    setSelectedSession(null);
   };
 
   const openViewDialog = (session: TrainingSession) => {
@@ -168,9 +194,33 @@ export default function TrainingSessionsPage() {
     setIsViewDialogOpen(true);
   };
 
+  const openEditDialog = (session: TrainingSession) => {
+    setSelectedSession(session);
+    // Format datetime for input
+    const formatForInput = (dt: string) => {
+      const d = new Date(dt);
+      return d.toISOString().slice(0, 16);
+    };
+    setFormData({
+      training_plan: session.training_plan,
+      title: session.title,
+      description: session.description || '',
+      instructor_name: session.instructor_name,
+      location: session.location,
+      start_datetime: formatForInput(session.start_datetime),
+      end_datetime: formatForInput(session.end_datetime),
+      max_participants: session.max_participants?.toString() || '',
+      confirmation_deadline: session.confirmation_deadline || '',
+      materials_required: session.materials_required || '',
+      objectives: session.objectives || '',
+    });
+    setIsEditDialogOpen(true);
+  };
+
   const scheduledCount = sessions.filter(s => s.status === 'scheduled').length;
   const confirmedCount = sessions.filter(s => s.status === 'confirmed').length;
   const completedCount = sessions.filter(s => s.status === 'completed').length;
+  const inProgressCount = sessions.filter(s => s.status === 'in_progress').length;
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -203,7 +253,7 @@ export default function TrainingSessionsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
@@ -221,7 +271,7 @@ export default function TrainingSessionsPage() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <CheckCircle className="h-5 w-5 text-blue-600" />
+                <UserCheck className="h-5 w-5 text-blue-600" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Confirmadas</p>
@@ -233,8 +283,21 @@ export default function TrainingSessionsPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
+              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                <Play className="h-5 w-5 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">En Progreso</p>
+                <p className="text-2xl font-bold">{inProgressCount}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
               <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <Check className="h-5 w-5 text-green-600" />
+                <Award className="h-5 w-5 text-green-600" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Completadas</p>
@@ -366,15 +429,29 @@ export default function TrainingSessionsPage() {
                           <Eye className="h-4 w-4" />
                         </Button>
                         {session.status === 'scheduled' && (
-                          <Button 
-                            variant="ghost" 
-                            size="icon-sm" 
-                            onClick={() => handleConfirm(session.id)}
-                            className="text-blue-600 hover:text-blue-700"
-                            title="Confirmar Sesión"
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                          </Button>
+                          <>
+                            <Button variant="ghost" size="icon-sm" onClick={() => openEditDialog(session)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon-sm" 
+                              onClick={() => handleConfirm(session.id)}
+                              className="text-blue-600 hover:text-blue-700"
+                              title="Confirmar Sesión"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon-sm" 
+                              onClick={() => handleDelete(session.id)}
+                              className="text-destructive hover:text-destructive"
+                              title="Eliminar Sesión"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
                         )}
                         {(session.status === 'confirmed' || session.status === 'in_progress') && (
                           <Button 
@@ -521,6 +598,134 @@ export default function TrainingSessionsPage() {
               Cancelar
             </Button>
             <Button onClick={handleCreate}>Crear Sesión</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Sesión de Capacitación</DialogTitle>
+            <DialogDescription>
+              Actualice la información de la sesión
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Plan de Capacitación *</label>
+              <Select 
+                value={formData.training_plan ? formData.training_plan.toString() : ''} 
+                onValueChange={(v) => setFormData({ ...formData, training_plan: parseInt(v) })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccione un plan" />
+                </SelectTrigger>
+                <SelectContent>
+                  {plans.map((plan) => (
+                    <SelectItem key={plan.id} value={plan.id.toString()}>
+                      {plan.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Título de la Sesión *</label>
+              <Input
+                placeholder="Sesión 1: Introducción"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Instructor *</label>
+                <Input
+                  placeholder="Nombre del instructor"
+                  value={formData.instructor_name}
+                  onChange={(e) => setFormData({ ...formData, instructor_name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Ubicación *</label>
+                <Input
+                  placeholder="Sala de capacitación A"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Fecha y Hora de Inicio *</label>
+                <Input
+                  type="datetime-local"
+                  value={formData.start_datetime}
+                  onChange={(e) => setFormData({ ...formData, start_datetime: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Fecha y Hora de Fin *</label>
+                <Input
+                  type="datetime-local"
+                  value={formData.end_datetime}
+                  onChange={(e) => setFormData({ ...formData, end_datetime: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Máximo de Participantes</label>
+                <Input
+                  type="number"
+                  placeholder="20"
+                  value={formData.max_participants}
+                  onChange={(e) => setFormData({ ...formData, max_participants: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Fecha Límite de Confirmación</label>
+                <Input
+                  type="date"
+                  value={formData.confirmation_deadline}
+                  onChange={(e) => setFormData({ ...formData, confirmation_deadline: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Descripción</label>
+              <Textarea
+                placeholder="Descripción de la sesión..."
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={2}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Objetivos</label>
+              <Textarea
+                placeholder="Objetivos de la sesión..."
+                value={formData.objectives}
+                onChange={(e) => setFormData({ ...formData, objectives: e.target.value })}
+                rows={2}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Materiales Requeridos</label>
+              <Textarea
+                placeholder="Lista de materiales que los participantes deben traer..."
+                value={formData.materials_required}
+                onChange={(e) => setFormData({ ...formData, materials_required: e.target.value })}
+                rows={2}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleUpdate}>Guardar Cambios</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
