@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Table,
   TableBody,
@@ -73,6 +75,21 @@ const colorOptions = [
 const getColorClass = (color: string): string => {
   const colorOption = colorOptions.find(c => c.value === color);
   return colorOption?.class || 'bg-blue-500';
+};
+
+// Mapping for category colors to match the design
+const getCategoryColor = (index: number): string => {
+  const colors = ['bg-primary', 'bg-chart-2', 'bg-chart-4', 'bg-chart-1'];
+  return colors[index % colors.length];
+};
+
+// Avatar images for demo
+const getAuthorAvatar = (authorName: string): string => {
+  const avatarMap: Record<string, string> = {
+    'Admin': '/admin-interface.svg',
+    'default': '/abstract-geometric-shapes.svg'
+  };
+  return avatarMap[authorName] || avatarMap['default'];
 };
 
 export default function ForumPage() {
@@ -301,6 +318,13 @@ export default function ForumPage() {
 
   const totalPosts = categories.reduce((sum, cat) => sum + cat.posts_count, 0);
   const activeCategories = categories.filter(c => c.is_active).length;
+  const totalReplies = posts.reduce((sum, p) => sum + p.replies_count, 0);
+
+  // Get unique active users (authors)
+  const activeUsers = Array.from(new Set(posts.map(p => p.author_name))).slice(0, 4);
+
+  // Check if we're in forum view mode (not admin)
+  const isForumView = activeTab === 'forum';
 
   return (
     <div className="space-y-6">
@@ -309,82 +333,204 @@ export default function ForumPage() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <MessageSquare className="h-8 w-8 text-primary" />
-            Foro de Discusión
+            ForoTech
           </h1>
           <p className="text-muted-foreground mt-1">
             Espacio de discusión y colaboración entre empleados
           </p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setActiveTab('admin')}
-            className={activeTab === 'admin' ? 'bg-accent' : ''}
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            Administrar
+          <Button variant="ghost" asChild>
+            <Link href="/forum/admin">Admin</Link>
+          </Button>
+          <Button onClick={() => {
+            if (categories.length > 0) {
+              setPostForm({ ...postForm, category: categories[0].id });
+            }
+            setIsPostDialogOpen(true);
+          }}>
+            Nuevo Tema
           </Button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <FolderOpen className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Categorías</p>
-                <p className="text-2xl font-bold">{activeCategories}</p>
-              </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary/10 rounded-lg">
+              <MessageSquare className="h-6 w-6 text-primary" />
             </div>
-          </CardContent>
+            <div>
+              <p className="text-sm text-muted-foreground">Temas Totales</p>
+              <p className="text-2xl font-bold text-foreground">{totalPosts.toLocaleString()}</p>
+            </div>
+          </div>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <MessageCircle className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Posts</p>
-                <p className="text-2xl font-bold">{totalPosts}</p>
-              </div>
+        <Card className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary/10 rounded-lg">
+              <Users className="h-6 w-6 text-primary" />
             </div>
-          </CardContent>
+            <div>
+              <p className="text-sm text-muted-foreground">Miembros</p>
+              <p className="text-2xl font-bold text-foreground">{new Set(posts.map(p => p.author)).size.toLocaleString()}</p>
+            </div>
+          </div>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Posts Fijados</p>
-                <p className="text-2xl font-bold">{posts.filter(p => p.is_pinned).length}</p>
-              </div>
+        <Card className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary/10 rounded-lg">
+              <TrendingUp className="h-6 w-6 text-primary" />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                <Users className="h-5 w-5 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Participantes</p>
-                <p className="text-2xl font-bold">{new Set(posts.map(p => p.author)).size}</p>
-              </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Respuestas</p>
+              <p className="text-2xl font-bold text-foreground">{totalReplies.toLocaleString()}</p>
             </div>
-          </CardContent>
+          </div>
         </Card>
       </div>
 
-      {/* Main Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      {/* Main Content with Sidebar Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        {/* Main Content */}
+        <div className="lg:col-span-3 space-y-4">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-foreground">Temas Recientes</h2>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => fetchPosts(selectedCategory?.id)}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Más Recientes
+              </Button>
+              <Button variant="outline" size="sm">
+                Más Populares
+              </Button>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : posts.length === 0 ? (
+            <Card className="p-6">
+              <div className="text-center py-8 text-muted-foreground">
+                <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No se encontraron publicaciones</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => {
+                    if (categories.length > 0) {
+                      setPostForm({ ...postForm, category: categories[0].id });
+                    }
+                    setIsPostDialogOpen(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Crear primer tema
+                </Button>
+              </div>
+            </Card>
+          ) : (
+            posts.map((post) => (
+              <Card key={post.id} className="p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleViewPost(post)}>
+                <div className="flex gap-4">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={getAuthorAvatar(post.author_name)} />
+                    <AvatarFallback>{post.author_name[0]}</AvatarFallback>
+                  </Avatar>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-4 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          {post.is_pinned && <Pin className="h-4 w-4 text-primary flex-shrink-0" />}
+                          <h3 className="font-semibold text-foreground text-lg hover:text-primary transition-colors text-balance">
+                            {post.title}
+                          </h3>
+                          {post.views_count > 100 && (
+                            <Badge variant="destructive" className="flex-shrink-0">
+                              🔥 Hot
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          por <span className="font-medium">{post.author_name}</span> en{" "}
+                          <Badge variant="secondary">{post.category_name}</Badge>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-6 mt-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4" />
+                        <span>{post.replies_count} respuestas</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        <span>{post.views_count} vistas</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        <span>{new Date(post.created_at).toLocaleDateString('es-ES')}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          <Card className="p-6">
+            <h3 className="font-semibold text-foreground mb-4">Categorías</h3>
+            <div className="space-y-3">
+              {categories.filter(c => c.is_active).map((category, idx) => (
+                <div
+                  key={category.id}
+                  className="flex items-center justify-between p-3 rounded-lg bg-accent hover:bg-accent/80 cursor-pointer transition-colors"
+                  onClick={() => selectCategory(category)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${getCategoryColor(idx)}`} />
+                    <span className="font-medium text-foreground">{category.name}</span>
+                  </div>
+                  <Badge variant="secondary">{category.posts_count}</Badge>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <h3 className="font-semibold text-foreground mb-4">Usuarios Activos</h3>
+            <div className="space-y-3">
+              {activeUsers.length > 0 ? activeUsers.map((user) => (
+                <div key={user} className="flex items-center gap-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={getAuthorAvatar(user)} />
+                    <AvatarFallback>{user[0]}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{user}</p>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-green-500 rounded-full" />
+                      <span className="text-xs text-muted-foreground">En línea</span>
+                    </div>
+                  </div>
+                </div>
+              )) : (
+                <p className="text-sm text-muted-foreground">No hay usuarios activos</p>
+              )}
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      {/* Legacy Tabs Content (hidden, kept for functionality) */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="hidden">
         <TabsList>
           <TabsTrigger value="categories">Categorías</TabsTrigger>
           <TabsTrigger value="posts">Publicaciones</TabsTrigger>
