@@ -900,11 +900,57 @@ export const forumPostApi = {
       body: JSON.stringify(data),
     });
   },
+  createWithFile: async (formData: FormData) => {
+    // For file uploads, we need to use multipart/form-data
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/forum-posts/`,
+      {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      }
+    );
+    if (!response.ok) {
+      let errorMessage = "Error uploading post";
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail || errorData.message || JSON.stringify(errorData);
+      } catch {
+        errorMessage = `Error ${response.status}: ${response.statusText}`;
+      }
+      return { error: errorMessage };
+    }
+    const data = await response.json();
+    return { data };
+  },
   update: async (id: number, data: Partial<ForumPost>) => {
     return fetchApi<ForumPost>(`/api/forum-posts/${id}/`, {
       method: "PATCH",
       body: JSON.stringify(data),
     });
+  },
+  updateWithFile: async (id: number, formData: FormData) => {
+    // For file uploads, we need to use multipart/form-data
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/forum-posts/${id}/`,
+      {
+        method: "PATCH",
+        body: formData,
+        credentials: "include",
+      }
+    );
+    if (!response.ok) {
+      let errorMessage = "Error updating post";
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.detail || errorData.message || JSON.stringify(errorData);
+      } catch {
+        errorMessage = `Error ${response.status}: ${response.statusText}`;
+      }
+      return { error: errorMessage };
+    }
+    const data = await response.json();
+    return { data };
   },
   delete: async (id: number) => {
     return fetchApi<void>(`/api/forum-posts/${id}/`, {
@@ -923,6 +969,11 @@ export const forumPostApi = {
   },
   toggleLock: async (id: number) => {
     return fetchApi<ForumPost>(`/api/forum-posts/${id}/toggle_lock/`, {
+      method: "POST",
+    });
+  },
+  toggleLike: async (id: number) => {
+    return fetchApi<ForumPost>(`/api/forum-posts/${id}/toggle_like/`, {
       method: "POST",
     });
   },

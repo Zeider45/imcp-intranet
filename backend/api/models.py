@@ -592,6 +592,12 @@ class ForumPost(models.Model):
     )
     title = models.CharField(max_length=200, verbose_name="Título")
     content = models.TextField(verbose_name="Contenido")
+    image = models.ImageField(
+        upload_to='forum_posts/%Y/%m/',
+        blank=True,
+        null=True,
+        verbose_name="Imagen"
+    )
     author = models.ForeignKey(
         User, 
         on_delete=models.CASCADE, 
@@ -609,6 +615,13 @@ class ForumPost(models.Model):
     is_pinned = models.BooleanField(default=False, verbose_name="Fijado")
     is_locked = models.BooleanField(default=False, verbose_name="Bloqueado")
     views_count = models.IntegerField(default=0, verbose_name="Número de Vistas")
+    likes_count = models.IntegerField(default=0, verbose_name="Número de Likes")
+    liked_by = models.ManyToManyField(
+        User,
+        related_name='liked_forum_posts',
+        blank=True,
+        verbose_name="Usuarios que dieron like"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
