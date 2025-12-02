@@ -550,3 +550,77 @@ class VacancyTransition(models.Model):
     
     def __str__(self):
         return f"Transición: {self.application.applicant.get_full_name()} -> {self.new_position}"
+
+
+# ========================================
+# FORUM MODULE - DISCUSSION FORUMS
+# ========================================
+
+class ForumCategory(models.Model):
+    """
+    Modelo para Categorías de Foro
+    Agrupa discusiones por tema o área de interés
+    """
+    name = models.CharField(max_length=100, unique=True, verbose_name="Nombre de Categoría")
+    description = models.TextField(blank=True, verbose_name="Descripción")
+    icon = models.CharField(max_length=50, blank=True, verbose_name="Icono (nombre de Lucide)")
+    color = models.CharField(max_length=20, default='blue', verbose_name="Color de la categoría")
+    is_active = models.BooleanField(default=True, verbose_name="Activa")
+    order = models.IntegerField(default=0, verbose_name="Orden de visualización")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['order', 'name']
+        verbose_name = 'Categoría de Foro'
+        verbose_name_plural = 'Categorías de Foro'
+    
+    def __str__(self):
+        return self.name
+
+
+class ForumPost(models.Model):
+    """
+    Modelo para Posts de Foro
+    Publicaciones y respuestas en los foros de discusión
+    """
+    category = models.ForeignKey(
+        ForumCategory, 
+        on_delete=models.CASCADE, 
+        related_name='posts',
+        verbose_name="Categoría"
+    )
+    title = models.CharField(max_length=200, verbose_name="Título")
+    content = models.TextField(verbose_name="Contenido")
+    author = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='forum_posts',
+        verbose_name="Autor"
+    )
+    parent_post = models.ForeignKey(
+        'self', 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True, 
+        related_name='replies',
+        verbose_name="Post Padre (si es respuesta)"
+    )
+    is_pinned = models.BooleanField(default=False, verbose_name="Fijado")
+    is_locked = models.BooleanField(default=False, verbose_name="Bloqueado")
+    views_count = models.IntegerField(default=0, verbose_name="Número de Vistas")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-is_pinned', '-created_at']
+        verbose_name = 'Post de Foro'
+        verbose_name_plural = 'Posts de Foro'
+    
+    def __str__(self):
+        return self.title
+    
+    @property
+    def replies_count(self):
+        """Returns the number of replies to this post"""
+        return self.replies.count()

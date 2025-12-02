@@ -369,3 +369,38 @@ export interface VacancyTransition {
   created_at: string;
   updated_at: string;
 }
+
+// ========================================
+// FORUM INTERFACES
+// ========================================
+
+export interface ForumCategory {
+  id: number;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  is_active: boolean;
+  order: number;
+  posts_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ForumPost {
+  id: number;
+  category: number;
+  category_name: string;
+  title: string;
+  content: string;
+  author: number;
+  author_name: string;
+  author_username: string;
+  parent_post: number | null;
+  is_pinned: boolean;
+  is_locked: boolean;
+  views_count: number;
+  replies_count: number;
+  created_at: string;
+  updated_at: string;
+}

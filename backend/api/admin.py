@@ -5,7 +5,9 @@ from .models import (
     LibraryDocument,
     Policy, PolicyDistribution, TrainingPlan, TrainingProvider,
     TrainingQuotation, TrainingSession, TrainingAttendance,
-    InternalVacancy, VacancyApplication, VacancyTransition
+    InternalVacancy, VacancyApplication, VacancyTransition,
+    # Forum Models
+    ForumCategory, ForumPost
 )
 
 
@@ -141,7 +143,6 @@ class VacancyApplicationAdmin(admin.ModelAdmin):
     raw_id_fields = ['vacancy', 'applicant', 'current_manager']
     ordering = ['-applied_at']
 
-
 @admin.register(VacancyTransition)
 class VacancyTransitionAdmin(admin.ModelAdmin):
     """Admin interface for VacancyTransition model"""
@@ -149,4 +150,27 @@ class VacancyTransitionAdmin(admin.ModelAdmin):
     search_fields = ['application__applicant__username', 'previous_position', 'new_position']
     list_filter = ['status', 'directory_updated', 'system_permissions_updated', 'file_updated']
     raw_id_fields = ['application', 'hr_coordinator']
+    ordering = ['-created_at']
+
+
+# ========================================
+# FORUM ADMIN
+# ========================================
+
+@admin.register(ForumCategory)
+class ForumCategoryAdmin(admin.ModelAdmin):
+    """Admin interface for ForumCategory model"""
+    list_display = ['name', 'icon', 'color', 'is_active', 'order', 'created_at']
+    search_fields = ['name', 'description']
+    list_filter = ['is_active', 'color']
+    ordering = ['order', 'name']
+
+
+@admin.register(ForumPost)
+class ForumPostAdmin(admin.ModelAdmin):
+    """Admin interface for ForumPost model"""
+    list_display = ['title', 'category', 'author', 'is_pinned', 'is_locked', 'views_count', 'created_at']
+    search_fields = ['title', 'content', 'author__username']
+    list_filter = ['category', 'is_pinned', 'is_locked', 'created_at']
+    raw_id_fields = ['author', 'parent_post']
     ordering = ['-created_at']

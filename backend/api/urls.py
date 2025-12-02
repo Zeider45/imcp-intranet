@@ -29,6 +29,10 @@ router.register(r'internal-vacancies', views.InternalVacancyViewSet, basename='i
 router.register(r'vacancy-applications', views.VacancyApplicationViewSet, basename='vacancy-application')
 router.register(r'vacancy-transitions', views.VacancyTransitionViewSet, basename='vacancy-transition')
 
+# Foro de Discusión
+router.register(r'forum-categories', views.ForumCategoryViewSet, basename='forum-category')
+router.register(r'forum-posts', views.ForumPostViewSet, basename='forum-post')
+
 urlpatterns = [
     path('health/', views.health_check, name='health_check'),
     path('welcome/', views.welcome, name='welcome'),

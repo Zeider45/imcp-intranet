@@ -6,7 +6,9 @@ from .models import (
     LibraryDocument,
     Policy, PolicyDistribution, TrainingPlan, TrainingProvider,
     TrainingQuotation, TrainingSession, TrainingAttendance,
-    InternalVacancy, VacancyApplication, VacancyTransition
+    InternalVacancy, VacancyApplication, VacancyTransition,
+    # Forum Models
+    ForumCategory, ForumPost
 )
 
 
@@ -263,3 +265,43 @@ class VacancyTransitionSerializer(serializers.ModelSerializer):
                   'system_permissions_updated', 'file_updated', 'notes',
                   'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
+
+
+# ========================================
+# FORUM SERIALIZERS
+# ========================================
+
+class ForumCategorySerializer(serializers.ModelSerializer):
+    """Serializer for ForumCategory model"""
+    posts_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ForumCategory
+        fields = ['id', 'name', 'description', 'icon', 'color', 'is_active', 
+                  'order', 'posts_count', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
+    
+    def get_posts_count(self, obj):
+        return obj.posts.filter(parent_post__isnull=True).count()
+
+
+class ForumPostSerializer(serializers.ModelSerializer):
+    """Serializer for ForumPost model"""
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    author_name = serializers.SerializerMethodField()
+    author_username = serializers.CharField(source='author.username', read_only=True)
+    replies_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ForumPost
+        fields = ['id', 'category', 'category_name', 'title', 'content', 
+                  'author', 'author_name', 'author_username', 'parent_post', 
+                  'is_pinned', 'is_locked', 'views_count', 'replies_count',
+                  'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at', 'views_count', 'author']
+    
+    def get_author_name(self, obj):
+        return obj.author.get_full_name() or obj.author.username
+    
+    def get_replies_count(self, obj):
+        return obj.replies.count()
