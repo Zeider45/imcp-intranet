@@ -146,6 +146,8 @@ export default function TrainingSessionsPage() {
       setIsEditDialogOpen(false);
       resetForm();
       fetchSessions();
+    } else if (response.error) {
+      alert(`Error al actualizar la sesión: ${response.error}`);
     }
   };
 
@@ -167,8 +169,12 @@ export default function TrainingSessionsPage() {
 
   const handleDelete = async (id: number) => {
     if (confirm('¿Está seguro de eliminar esta sesión?')) {
-      await trainingSessionApi.delete(id);
-      fetchSessions();
+      const response = await trainingSessionApi.delete(id);
+      if (response.error) {
+        alert(`Error al eliminar la sesión: ${response.error}`);
+      } else {
+        fetchSessions();
+      }
     }
   };
 

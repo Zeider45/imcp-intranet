@@ -166,6 +166,8 @@ export default function PoliciesPage() {
       const response = await policyApi.approveBoard(id, today);
       if (response.data) {
         fetchPolicies();
+      } else if (response.error) {
+        alert(`Error al aprobar por junta directiva: ${response.error}`);
       }
     }
   };
