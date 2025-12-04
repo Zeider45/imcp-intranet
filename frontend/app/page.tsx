@@ -9,7 +9,7 @@ export default function DashboardPage() {
     <div className="p-8">
       {/* Welcome Section */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-gray-900 mb-2">
           Bienvenido a la Intranet
         </h1>
         <p className="text-gray-600">
