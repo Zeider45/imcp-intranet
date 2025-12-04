@@ -116,7 +116,7 @@ export function DashboardSidebar() {
           )}
         >
           <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-white text-xs font-bold">
-            JP
+            JD
           </div>
           {!collapsed && (
             <div className="flex-1 text-sm">

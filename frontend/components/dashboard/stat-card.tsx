@@ -32,7 +32,7 @@ export function StatCard({
       <div className="flex items-center justify-between">
         <div>
           <p className="text-gray-600 mb-1">{title}</p>
-          <p className="text-gray-900">{value}</p>
+          <p className="text-2xl font-bold text-gray-900">{value}</p>
           {description && (
             <p className="mt-1 text-xs text-gray-500">
               {description}
