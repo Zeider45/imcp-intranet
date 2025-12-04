@@ -47,7 +47,7 @@ export function DashboardHeader() {
   };
 
   return (
-    <header className="fixed top-0 right-0 left-64 z-30 h-16 border-b border-border bg-card">
+    <header className="fixed top-0 right-0 left-64 z-30 h-16 border-b border-gray-200 bg-white">
       <div className="flex h-full items-center justify-between px-6">
         <div className="flex items-center gap-4 flex-1 max-w-2xl">
           <div className="relative flex-1">
