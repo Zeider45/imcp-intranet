@@ -159,8 +159,8 @@ export default function TrainingPlansAdminPage() {
         </Link>
         <div className="flex items-center justify-between mt-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Planes de Capacitación</h1>
-            <p className="text-gray-600">Administración de planes de capacitación</p>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Gestión de Planes de Capacitación</h1>
+            <p className="text-muted-foreground">Administración de planes de capacitación</p>
           </div>
           <Button onClick={handleCreate} className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
@@ -174,7 +174,7 @@ export default function TrainingPlansAdminPage() {
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+              <Search className="w-5 h-5 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" />
               <Input
                 placeholder="Buscar planes..."
                 value={searchTerm}
@@ -202,8 +202,8 @@ export default function TrainingPlansAdminPage() {
         <CardContent className="p-0">
           {plans.length === 0 ? (
             <div className="text-center py-12">
-              <GraduationCap className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600">No se encontraron planes de capacitación</p>
+              <GraduationCap className="w-16 h-16 text-muted mx-auto mb-4" />
+              <p className="text-muted-foreground">No se encontraron planes de capacitación</p>
             </div>
           ) : (
             <Table>

@@ -28,13 +28,13 @@ export function StatCard({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="bg-card rounded-lg border border-border p-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-gray-600 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-muted-foreground mb-1">{title}</p>
+          <p className="text-2xl font-bold text-foreground">{value}</p>
           {description && (
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               {description}
             </p>
           )}

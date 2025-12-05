@@ -59,8 +59,8 @@ export default function InternalVacanciesPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
+          <p className="mt-4 text-muted-foreground">Cargando...</p>
         </div>
       </div>
     );
@@ -70,13 +70,13 @@ export default function InternalVacanciesPage() {
     <div className="p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-gray-900 mb-2">Vacantes Internas</h1>
-          <p className="text-gray-600">
+          <h1 className="text-foreground mb-2">Vacantes Internas</h1>
+          <p className="text-muted-foreground">
             Oportunidades de crecimiento dentro del banco
           </p>
         </div>
         <Link href="/internal-vacancies/admin">
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+          <button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2">
             <Settings className="w-4 h-4" />
             Administrar
           </button>
@@ -84,18 +84,18 @@ export default function InternalVacanciesPage() {
       </div>
 
       {/* Department Filter */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+      <div className="bg-card rounded-lg border border-border p-4 mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <Building2 className="w-5 h-5 text-gray-600" />
-          <span className="text-gray-700">Filtrar por Departamento:</span>
+          <Building2 className="w-5 h-5 text-muted-foreground" />
+          <span className="text-foreground">Filtrar por Departamento:</span>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setSelectedDepartment('all')}
             className={`px-4 py-2 rounded-lg transition-colors ${
               selectedDepartment === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary text-secondary-foreground hover:bg-accent'
             }`}
           >
             Todos
@@ -106,8 +106,8 @@ export default function InternalVacanciesPage() {
               onClick={() => setSelectedDepartment(dept.id.toString())}
               className={`px-4 py-2 rounded-lg transition-colors ${
                 selectedDepartment === dept.id.toString()
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary text-secondary-foreground hover:bg-accent'
               }`}
             >
               {dept.name}
@@ -119,24 +119,24 @@ export default function InternalVacanciesPage() {
       {/* Vacancies List */}
       {vacancies.length === 0 ? (
         <div className="text-center py-12">
-          <Briefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-600">No hay vacantes disponibles para este departamento</p>
+          <Briefcase className="w-16 h-16 text-muted mx-auto mb-4" />
+          <p className="text-muted-foreground">No hay vacantes disponibles para este departamento</p>
         </div>
       ) : (
         <div className="space-y-6">
           {vacancies.map((vacancy) => (
             <div
               key={vacancy.id}
-              className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow"
+              className="bg-card rounded-lg border border-border p-6 hover:shadow-lg transition-shadow"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-start gap-4 flex-1">
-                  <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Briefcase className="w-6 h-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Briefcase className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-gray-900 mb-2">{vacancy.title}</h3>
-                    <div className="flex flex-wrap gap-4 text-gray-600 mb-3">
+                    <h3 className="text-foreground mb-2">{vacancy.title}</h3>
+                    <div className="flex flex-wrap gap-4 text-muted-foreground mb-3">
                       <div className="flex items-center gap-2">
                         <Building2 className="w-4 h-4" />
                         <span>{getDepartmentName(vacancy.department)}</span>
@@ -152,40 +152,40 @@ export default function InternalVacanciesPage() {
                         </div>
                       )}
                     </div>
-                    <p className="text-gray-700 mb-3">{vacancy.description}</p>
+                    <p className="text-card-foreground mb-3">{vacancy.description}</p>
                     
                     {vacancy.responsibilities && (
                       <div className="mb-3">
-                        <p className="text-gray-700 font-medium mb-2">Responsabilidades:</p>
-                        <p className="text-gray-600 whitespace-pre-line">{vacancy.responsibilities}</p>
+                        <p className="text-foreground font-medium mb-2">Responsabilidades:</p>
+                        <p className="text-muted-foreground whitespace-pre-line">{vacancy.responsibilities}</p>
                       </div>
                     )}
                     
                     {vacancy.technical_requirements && (
                       <div>
-                        <p className="text-gray-700 font-medium mb-2">Requisitos Técnicos:</p>
-                        <p className="text-gray-600 whitespace-pre-line">{vacancy.technical_requirements}</p>
+                        <p className="text-foreground font-medium mb-2">Requisitos Técnicos:</p>
+                        <p className="text-muted-foreground whitespace-pre-line">{vacancy.technical_requirements}</p>
                       </div>
                     )}
                   </div>
                 </div>
                 <div className="flex flex-col gap-3 flex-shrink-0 ml-4">
                   <button 
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+                    className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap"
                     onClick={() => alert(`Aplicar a: ${vacancy.title}`)}
                   >
                     Aplicar Ahora
                   </button>
                   <div className="text-center">
-                    <div className="flex items-center justify-center gap-2 text-gray-600">
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
                       <Users className="w-4 h-4" />
                       <span>{vacancy.application_count || 0} aplicantes</span>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="pt-4 border-t border-gray-200">
-                <p className="text-gray-600">
+              <div className="pt-4 border-t border-border">
+                <p className="text-muted-foreground">
                   {vacancy.application_deadline 
                     ? `Fecha límite: ${new Date(vacancy.application_deadline).toLocaleDateString()}`
                     : `Publicado: ${new Date(vacancy.created_at).toLocaleDateString()}`

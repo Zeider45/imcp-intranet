@@ -212,8 +212,8 @@ export default function LibraryDocumentsAdminPage() {
         </Link>
         <div className="flex items-center justify-between mt-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Documentos</h1>
-            <p className="text-gray-600">Administración de la biblioteca de documentos</p>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Gestión de Documentos</h1>
+            <p className="text-muted-foreground">Administración de la biblioteca de documentos</p>
           </div>
           <Button onClick={handleCreate} className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
@@ -236,7 +236,7 @@ export default function LibraryDocumentsAdminPage() {
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+              <Search className="w-5 h-5 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" />
               <Input
                 placeholder="Buscar documentos..."
                 value={searchTerm}
@@ -264,8 +264,8 @@ export default function LibraryDocumentsAdminPage() {
         <CardContent className="p-0">
           {filteredDocuments.length === 0 ? (
             <div className="text-center py-12">
-              <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600">No se encontraron documentos</p>
+              <FileText className="w-16 h-16 text-muted mx-auto mb-4" />
+              <p className="text-muted-foreground">No se encontraron documentos</p>
             </div>
           ) : (
             <Table>
@@ -400,9 +400,9 @@ export default function LibraryDocumentsAdminPage() {
                   id="file-upload"
                 />
                 <label htmlFor="file-upload" className="cursor-pointer">
-                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-600">Haz clic para seleccionar un archivo</p>
-                  <p className="text-gray-400 text-sm">PDF, DOC, DOCX, XLS, XLSX (máx. 10MB)</p>
+                  <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground">Haz clic para seleccionar un archivo</p>
+                  <p className="text-muted-foreground text-sm">PDF, DOC, DOCX, XLS, XLSX (máx. 10MB)</p>
                   {selectedFile && (
                     <p className="text-primary mt-2">{selectedFile.name}</p>
                   )}
