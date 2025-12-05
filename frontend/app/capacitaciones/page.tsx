@@ -1,103 +1,91 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Clock, MapPin, Users, CheckCircle, Plus, Search } from 'lucide-react';
+import { trainingSessionApi, trainingAttendanceApi } from '@/lib/api';
+import type { TrainingSession, TrainingAttendance } from '@/lib/api/types';
 
-interface Capacitacion {
-  id: number;
-  title: string;
-  instructor: string;
-  date: string;
-  time: string;
-  location: string;
-  attendees: number;
-  maxAttendees: number;
-  status: 'asignada' | 'completada';
-  progress: number;
+interface CapacitacionWithAttendance {
+  session: TrainingSession;
+  attendance?: TrainingAttendance;
 }
 
 export default function CapacitacionesPage() {
   const [activeTab, setActiveTab] = useState<'asignadas' | 'asistidas' | 'calendario'>('asignadas');
   const [showAssignForm, setShowAssignForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [asignadas, setAsignadas] = useState<CapacitacionWithAttendance[]>([]);
+  const [asistidas, setAsistidas] = useState<CapacitacionWithAttendance[]>([]);
   const isAdmin = true; // TODO: Get from auth context
 
-  const capacitaciones: Capacitacion[] = [
-    {
-      id: 1,
-      title: 'Seguridad Bancaria Avanzada',
-      instructor: 'Carlos Mendoza',
-      date: '2024-12-15',
-      time: '10:00 AM - 12:00 PM',
-      location: 'Sala de Conferencias A',
-      attendees: 25,
-      maxAttendees: 30,
-      status: 'asignada',
-      progress: 0,
-    },
-    {
-      id: 2,
-      title: 'Atención al Cliente Excellence',
-      instructor: 'María Rodríguez',
-      date: '2024-12-18',
-      time: '2:00 PM - 4:00 PM',
-      location: 'Auditorio Principal',
-      attendees: 40,
-      maxAttendees: 50,
-      status: 'asignada',
-      progress: 0,
-    },
-    {
-      id: 3,
-      title: 'Gestión de Riesgos Crediticios',
-      instructor: 'Roberto Silva',
-      date: '2024-12-20',
-      time: '9:00 AM - 1:00 PM',
-      location: 'Sala de Capacitación',
-      attendees: 15,
-      maxAttendees: 20,
-      status: 'asignada',
-      progress: 0,
-    },
-    {
-      id: 4,
-      title: 'Nuevas Tecnologías Bancarias',
-      instructor: 'Ana Martínez',
-      date: '2024-11-28',
-      time: '10:00 AM - 12:00 PM',
-      location: 'Lab de Tecnología',
-      attendees: 30,
-      maxAttendees: 30,
-      status: 'completada',
-      progress: 100,
-    },
-    {
-      id: 5,
-      title: 'Compliance y Normativas',
-      instructor: 'Jorge López',
-      date: '2024-11-20',
-      time: '3:00 PM - 5:00 PM',
-      location: 'Sala Virtual',
-      attendees: 50,
-      maxAttendees: 50,
-      status: 'completada',
-      progress: 100,
-    },
-    {
-      id: 6,
-      title: 'Liderazgo y Trabajo en Equipo',
-      instructor: 'Laura Fernández',
-      date: '2024-11-15',
-      time: '9:00 AM - 5:00 PM',
-      location: 'Centro de Convenciones',
-      attendees: 35,
-      maxAttendees: 40,
-      status: 'completada',
-      progress: 100,
-    },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch my invitations/attendances
+        const attendancesResponse = await trainingAttendanceApi.myInvitations();
+        
+        if (attendancesResponse.data) {
+          const attendances = attendancesResponse.data;
+          
+          // Fetch sessions for each attendance
+          const sessionPromises = attendances.map(attendance => 
+            trainingSessionApi.get(attendance.session)
+          );
+          
+          const sessionsResponses = await Promise.all(sessionPromises);
+          
+          // Combine sessions with attendance data
+          const combinedData: CapacitacionWithAttendance[] = sessionsResponses
+            .map((response, index) => ({
+              session: response.data!,
+              attendance: attendances[index],
+            }))
+            .filter(item => item.session);
+          
+          // Split into assigned (upcoming) and attended (completed)
+          const assigned = combinedData.filter(
+            item => item.session.status !== 'completed' && 
+                   item.attendance?.confirmation_status !== 'declined'
+          );
+          
+          const attended = combinedData.filter(
+            item => item.session.status === 'completed' ||
+                   item.attendance?.attendance_status === 'present'
+          );
+          
+          setAsignadas(assigned);
+          setAsistidas(attended);
+        }
+      } catch (error) {
+        console.error('Error fetching training data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const asignadas = capacitaciones.filter((c) => c.status === 'asignada');
-  const asistidas = capacitaciones.filter((c) => c.status === 'completada');
+    fetchData();
+  }, []);
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
 
   if (isAdmin && showAssignForm) {
     return (
@@ -296,135 +284,194 @@ export default function CapacitacionesPage() {
 
       {/* Content */}
       {activeTab === 'asignadas' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {asignadas.map((capacitacion) => (
-            <div
-              key={capacitacion.id}
-              className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex-1">{capacitacion.title}</h3>
-                <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-medium">
-                  Próxima
-                </span>
+        <>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
+                <p className="mt-4 text-gray-600">Cargando...</p>
               </div>
-              
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <CalendarIcon className="w-4 h-4" />
-                  <span>{capacitacion.date}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Clock className="w-4 h-4" />
-                  <span>{capacitacion.time}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <MapPin className="w-4 h-4" />
-                  <span>{capacitacion.location}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Users className="w-4 h-4" />
-                  <span>{capacitacion.attendees} / {capacitacion.maxAttendees} inscritos</span>
-                </div>
-              </div>
-
-              <p className="text-sm text-gray-600 mb-4">Instructor: {capacitacion.instructor}</p>
-
-              <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                Ver Detalles
-              </button>
             </div>
-          ))}
-        </div>
+          ) : asignadas.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600">No tienes capacitaciones asignadas en este momento.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {asignadas.map(({ session, attendance }) => (
+                <div
+                  key={session.id}
+                  className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 flex-1">{session.title}</h3>
+                    <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-medium">
+                      {attendance?.confirmation_status === 'confirmed' ? 'Confirmada' : 'Próxima'}
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-3 mb-4">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <CalendarIcon className="w-4 h-4" />
+                      <span>{formatDate(session.start_datetime)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Clock className="w-4 h-4" />
+                      <span>{formatDateTime(session.start_datetime)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <MapPin className="w-4 h-4" />
+                      <span>{session.location}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Users className="w-4 h-4" />
+                      <span>{session.confirmed_count} / {session.max_participants || 'Sin límite'} confirmados</span>
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-gray-600 mb-4">Instructor: {session.instructor_name}</p>
+
+                  <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    Ver Detalles
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {activeTab === 'asistidas' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {asistidas.map((capacitacion) => (
-            <div
-              key={capacitacion.id}
-              className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex-1">{capacitacion.title}</h3>
-                <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
+        <>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
+                <p className="mt-4 text-gray-600">Cargando...</p>
               </div>
-              
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <CalendarIcon className="w-4 h-4" />
-                  <span>{capacitacion.date}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <MapPin className="w-4 h-4" />
-                  <span>{capacitacion.location}</span>
-                </div>
-              </div>
-
-              <p className="text-sm text-gray-600 mb-4">Instructor: {capacitacion.instructor}</p>
-
-              <div className="mb-4">
-                <div className="flex justify-between text-sm text-gray-600 mb-2">
-                  <span>Progreso</span>
-                  <span>{capacitacion.progress}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-green-600 h-2 rounded-full transition-all"
-                    style={{ width: `${capacitacion.progress}%` }}
-                  />
-                </div>
-              </div>
-
-              <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                Ver Certificado
-              </button>
             </div>
-          ))}
-        </div>
+          ) : asistidas.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600">No has asistido a ninguna capacitación aún.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {asistidas.map(({ session, attendance }) => (
+                <div
+                  key={session.id}
+                  className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 flex-1">{session.title}</h3>
+                    <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
+                  </div>
+                  
+                  <div className="space-y-3 mb-4">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <CalendarIcon className="w-4 h-4" />
+                      <span>{formatDate(session.start_datetime)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <MapPin className="w-4 h-4" />
+                      <span>{session.location}</span>
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-gray-600 mb-4">Instructor: {session.instructor_name}</p>
+
+                  {attendance?.evaluation_score && (
+                    <div className="mb-4">
+                      <div className="flex justify-between text-sm text-gray-600 mb-2">
+                        <span>Calificación</span>
+                        <span>{attendance.evaluation_score}/100</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-green-600 h-2 rounded-full transition-all"
+                          style={{ width: `${attendance.evaluation_score}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <button 
+                    className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    disabled={!attendance?.certificate_issued}
+                  >
+                    {attendance?.certificate_issued ? 'Ver Certificado' : 'Certificado no disponible'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {activeTab === 'calendario' && (
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="grid grid-cols-7 gap-2 mb-4">
-            {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day) => (
-              <div key={day} className="text-center text-sm font-medium text-gray-600 py-2">
-                {day}
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
+                <p className="mt-4 text-gray-600">Cargando...</p>
               </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 gap-2">
-            {Array.from({ length: 35 }, (_, i) => {
-              const day = i - 2;
-              const hasEvent = [13, 16, 18].includes(day);
-              return (
-                <div
-                  key={i}
-                  className={`aspect-square flex items-center justify-center rounded-lg text-sm ${
-                    day > 0 && day <= 31
-                      ? hasEvent
-                        ? 'bg-blue-600 text-white cursor-pointer hover:bg-blue-700'
-                        : 'bg-gray-50 hover:bg-gray-100 cursor-pointer'
-                      : 'bg-transparent'
-                  }`}
-                >
-                  {day > 0 && day <= 31 && day}
-                </div>
-              );
-            })}
-          </div>
-          <div className="mt-6 space-y-3">
-            <p className="text-sm font-medium text-gray-700">Próximos eventos:</p>
-            {asignadas.slice(0, 3).map((cap) => (
-              <div key={cap.id} className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                <div className="w-2 h-2 bg-blue-600 rounded-full" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">{cap.title}</p>
-                  <p className="text-xs text-gray-600">{cap.date} - {cap.time}</p>
-                </div>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-7 gap-2 mb-4">
+                {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day) => (
+                  <div key={day} className="text-center text-sm font-medium text-gray-600 py-2">
+                    {day}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+              <div className="grid grid-cols-7 gap-2">
+                {Array.from({ length: 35 }, (_, i) => {
+                  const day = i - 2;
+                  // Check if any training is on this day
+                  const hasEvent = asignadas.some(({ session }) => {
+                    const sessionDate = new Date(session.start_datetime);
+                    const currentMonth = new Date().getMonth();
+                    const currentYear = new Date().getFullYear();
+                    return sessionDate.getDate() === day && 
+                           sessionDate.getMonth() === currentMonth &&
+                           sessionDate.getFullYear() === currentYear;
+                  });
+                  
+                  return (
+                    <div
+                      key={i}
+                      className={`aspect-square flex items-center justify-center rounded-lg text-sm ${
+                        day > 0 && day <= 31
+                          ? hasEvent
+                            ? 'bg-blue-600 text-white cursor-pointer hover:bg-blue-700'
+                            : 'bg-gray-50 hover:bg-gray-100 cursor-pointer'
+                          : 'bg-transparent'
+                      }`}
+                    >
+                      {day > 0 && day <= 31 && day}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-6 space-y-3">
+                <p className="text-sm font-medium text-gray-700">Próximos eventos:</p>
+                {asignadas.length === 0 ? (
+                  <p className="text-sm text-gray-600">No hay eventos próximos programados.</p>
+                ) : (
+                  asignadas.slice(0, 3).map(({ session }) => (
+                    <div key={session.id} className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                      <div className="w-2 h-2 bg-blue-600 rounded-full" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">{session.title}</p>
+                        <p className="text-xs text-gray-600">{formatDateTime(session.start_datetime)}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
