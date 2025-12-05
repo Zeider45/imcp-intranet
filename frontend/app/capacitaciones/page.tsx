@@ -112,17 +112,6 @@ export default function CapacitacionesPage() {
     });
   };
 
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   const handleConfirmAttendance = async (attendanceId: number) => {
     try {
       await trainingAttendanceApi.confirmAttendance(attendanceId);

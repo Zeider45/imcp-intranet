@@ -44,7 +44,6 @@ import {
 } from 'lucide-react';
 import { trainingSessionApi, trainingAttendanceApi, trainingPlanApi } from '@/lib/api';
 import type { TrainingSession, TrainingPlan, PaginatedResponse } from '@/lib/api/types';
-import { useAuth } from '@/lib/auth-context';
 
 interface UserWithGroups {
   id: number;
@@ -62,7 +61,6 @@ interface GroupedUsers {
 }
 
 export default function CapacitacionesAdminPage() {
-  const { user } = useAuth();
   const [adminTab, setAdminTab] = useState<'usuarios' | 'sesiones' | 'planes'>('usuarios');
   
   // Admin view state
@@ -91,12 +89,6 @@ export default function CapacitacionesAdminPage() {
     end_datetime: '',
     max_participants: '',
   });
-
-  // Check if user is admin (has admin role or specific groups)
-  const isAdmin = user?.is_superuser || 
-                  user?.is_staff || 
-                  user?.groups?.includes('Training_Managers') || 
-                  user?.groups?.includes('HR_Managers');
 
   // Fetch data for admin view
   const fetchAdminData = useCallback(async () => {
