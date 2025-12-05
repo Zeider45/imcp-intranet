@@ -79,11 +79,11 @@ export default function PoliciesPage() {
     <div className="p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-gray-900 mb-2">Políticas y Reglamentos</h1>
-          <p className="text-gray-600">Consulta las políticas y reglamentos del banco</p>
+          <h1 className="text-foreground mb-2">Políticas y Reglamentos</h1>
+          <p className="text-muted-foreground">Consulta las políticas y reglamentos del banco</p>
         </div>
         <Link href="/policies/admin">
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
+          <Button className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
             Administrar
           </Button>
@@ -91,18 +91,18 @@ export default function PoliciesPage() {
       </div>
 
       {/* Area Filter */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+      <div className="bg-card dark:bg-card rounded-lg border border-border p-4 mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <Building2 className="w-5 h-5 text-gray-600" />
-          <span className="text-gray-700">Filtrar por Área:</span>
+          <Building2 className="w-5 h-5 text-muted-foreground" />
+          <span className="text-foreground">Filtrar por Área:</span>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setSelectedArea('all')}
             className={`px-4 py-2 rounded-lg transition-colors ${
               selectedArea === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-secondary dark:bg-secondary text-secondary-foreground hover:bg-accent dark:hover:bg-accent'
             }`}
           >
             Todas
@@ -113,8 +113,8 @@ export default function PoliciesPage() {
               onClick={() => setSelectedArea(area)}
               className={`px-4 py-2 rounded-lg transition-colors ${
                 selectedArea === area
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary dark:bg-secondary text-secondary-foreground hover:bg-accent dark:hover:bg-accent'
               }`}
             >
               {originLabels[area] || area}
@@ -126,24 +126,24 @@ export default function PoliciesPage() {
       {/* Policies List */}
       {policies.length === 0 ? (
         <div className="text-center py-12">
-          <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-600">No se encontraron políticas para esta área</p>
+          <FileText className="w-16 h-16 text-muted mx-auto mb-4" />
+          <p className="text-muted-foreground">No se encontraron políticas para esta área</p>
         </div>
       ) : (
         <div className="space-y-4">
           {policies.map((policy) => (
             <div
               key={policy.id}
-              className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow"
+              className="bg-card dark:bg-card rounded-lg border border-border p-6 hover:shadow-lg transition-shadow"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-start gap-4 flex-1">
-                  <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-6 h-6 text-purple-600" />
+                  <div className="w-12 h-12 bg-purple-50 dark:bg-purple-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-gray-900 mb-2">{policy.title}</h3>
-                    <div className="flex flex-wrap gap-4 text-gray-600">
+                    <h3 className="text-foreground mb-2">{policy.title}</h3>
+                    <div className="flex flex-wrap gap-4 text-muted-foreground">
                       <div className="flex items-center gap-2">
                         <Building2 className="w-4 h-4" />
                         <span>{originLabels[policy.origin] || policy.origin}</span>
@@ -155,7 +155,7 @@ export default function PoliciesPage() {
                 </div>
                 <div className="flex gap-2 flex-shrink-0 ml-4">
                   <button 
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
                     onClick={() => {
                       alert(`Ver política: ${policy.title}`);
                     }}
@@ -164,7 +164,7 @@ export default function PoliciesPage() {
                     Descargar
                   </button>
                   <button 
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="px-4 py-2 border border-border text-foreground rounded-lg hover:bg-accent dark:hover:bg-accent transition-colors"
                     onClick={() => {
                       alert(`Ver detalles: ${policy.title}`);
                     }}
@@ -173,11 +173,11 @@ export default function PoliciesPage() {
                   </button>
                 </div>
               </div>
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                <p className="text-gray-600">
+              <div className="flex items-center justify-between pt-4 border-t border-border">
+                <p className="text-muted-foreground">
                   Última actualización: {new Date(policy.updated_at).toLocaleDateString()}
                 </p>
-                <p className="text-gray-600">Código: {policy.code}</p>
+                <p className="text-muted-foreground">Código: {policy.code}</p>
               </div>
             </div>
           ))}

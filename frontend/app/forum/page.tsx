@@ -57,8 +57,8 @@ export default function ForumPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Cargando...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
+          <p className="mt-4 text-muted-foreground">Cargando...</p>
         </div>
       </div>
     );
@@ -67,25 +67,25 @@ export default function ForumPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-gray-900 mb-2">Foro de Comunicación</h1>
-        <p className="text-gray-600">
+        <h1 className="text-foreground mb-2">Foro de Comunicación</h1>
+        <p className="text-muted-foreground">
           Mantente al día con las novedades del banco
         </p>
       </div>
 
       {/* Create Post Card */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+      <div className="bg-card dark:bg-card rounded-lg border border-border p-4 mb-6">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white flex-shrink-0 text-xs font-bold">
             US
           </div>
           <Link href="/forum/admin" className="flex-1">
-            <div className="px-4 py-2 bg-gray-50 text-gray-600 rounded-full text-left hover:bg-gray-100 transition-colors cursor-pointer">
+            <div className="px-4 py-2 bg-muted dark:bg-muted text-muted-foreground rounded-full text-left hover:bg-accent dark:hover:bg-accent transition-colors cursor-pointer">
               Comparte una actualización con el equipo...
             </div>
           </Link>
           <Link href="/forum/admin">
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+            <button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2">
               <Plus className="w-4 h-4" />
               Publicar
             </button>
@@ -96,19 +96,19 @@ export default function ForumPage() {
       {/* Posts Feed */}
       <div className="space-y-6">
         {posts.map((post) => (
-          <div key={post.id} className="bg-white rounded-lg border border-gray-200 p-6">
+          <div key={post.id} className="bg-card dark:bg-card rounded-lg border border-border p-6">
             {/* Post Header */}
             <div className="flex items-start gap-4 mb-4">
               <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getRandomGradient(post.id)} flex items-center justify-center text-white flex-shrink-0 text-xs font-bold`}>
                 {getAuthorInitials(post.author_name)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-gray-900">{post.author_name}</p>
-                <p className="text-gray-600 text-sm">Usuario</p>
-                <p className="text-gray-400 text-xs">{new Date(post.created_at).toLocaleString()}</p>
+                <p className="text-foreground">{post.author_name}</p>
+                <p className="text-muted-foreground text-sm">Usuario</p>
+                <p className="text-muted-foreground text-xs">{new Date(post.created_at).toLocaleString()}</p>
               </div>
               <Link href="/forum/admin">
-                <button className="text-gray-400 hover:text-gray-600">
+                <button className="text-muted-foreground hover:text-foreground">
                   <MoreVertical className="w-5 h-5" />
                 </button>
               </Link>
@@ -116,17 +116,17 @@ export default function ForumPage() {
 
             {/* Post Title & Content */}
             {post.title && (
-              <h3 className="text-gray-900 font-medium mb-2">{post.title}</h3>
+              <h3 className="text-foreground font-medium mb-2">{post.title}</h3>
             )}
-            <p className="text-gray-700 mb-4 whitespace-pre-line">{post.content}</p>
+            <p className="text-card-foreground mb-4 whitespace-pre-line">{post.content}</p>
 
             {/* Post Stats */}
-            <div className="flex items-center gap-6 py-3 border-t border-b border-gray-200 mb-3">
-              <div className="flex items-center gap-2 text-gray-600 text-sm">
+            <div className="flex items-center gap-6 py-3 border-t border-b border-border mb-3">
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <ThumbsUp className="w-4 h-4" />
                 <span>{post.likes_count || 0} Me gusta</span>
               </div>
-              <div className="flex items-center gap-2 text-gray-600 text-sm">
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <MessageCircle className="w-4 h-4" />
                 <span>{post.replies_count || 0} Comentarios</span>
               </div>
@@ -138,20 +138,20 @@ export default function ForumPage() {
                 onClick={() => handleToggleLike(post.id)}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                   post.user_has_liked
-                    ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'text-primary bg-primary/10 dark:bg-primary/20 hover:bg-primary/20 dark:hover:bg-primary/30'
+                    : 'text-foreground hover:bg-accent dark:hover:bg-accent'
                 }`}
               >
                 <ThumbsUp className="w-5 h-5" />
                 <span>Me gusta</span>
               </button>
               <Link href={`/forum/admin#post-${post.id}`} className="flex-1">
-                <button className="w-full flex items-center justify-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                <button className="w-full flex items-center justify-center gap-2 px-4 py-2 text-foreground hover:bg-accent dark:hover:bg-accent rounded-lg transition-colors">
                   <MessageCircle className="w-5 h-5" />
                   <span>Comentar</span>
                 </button>
               </Link>
-              <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+              <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-foreground hover:bg-accent dark:hover:bg-accent rounded-lg transition-colors">
                 <Share2 className="w-5 h-5" />
                 <span>Compartir</span>
               </button>
@@ -159,9 +159,9 @@ export default function ForumPage() {
 
             {/* Comments Section */}
             {post.replies_count > 0 && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="mt-4 pt-4 border-t border-border">
                 <Link href={`/forum/admin#post-${post.id}`}>
-                  <button className="text-blue-600 hover:text-blue-700 text-sm">
+                  <button className="text-primary hover:opacity-80 text-sm">
                     Ver todos los comentarios ({post.replies_count})
                   </button>
                 </Link>
@@ -176,7 +176,7 @@ export default function ForumPage() {
         <div className="mt-6 text-center">
           <button 
             onClick={fetchPosts}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-6 py-2 border border-border text-foreground rounded-lg hover:bg-accent dark:hover:bg-accent transition-colors"
           >
             Cargar más publicaciones
           </button>
@@ -185,8 +185,8 @@ export default function ForumPage() {
 
       {posts.length === 0 && (
         <div className="text-center py-12">
-          <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-600">No hay publicaciones aún</p>
+          <MessageCircle className="w-16 h-16 text-muted mx-auto mb-4" />
+          <p className="text-muted-foreground">No hay publicaciones aún</p>
         </div>
       )}
     </div>

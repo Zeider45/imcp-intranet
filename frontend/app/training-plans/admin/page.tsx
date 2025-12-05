@@ -159,8 +159,8 @@ export default function TrainingPlansAdminPage() {
         </Link>
         <div className="flex items-center justify-between mt-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Planes de Capacitación</h1>
-            <p className="text-gray-600">Administración de planes de capacitación</p>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Gestión de Planes de Capacitación</h1>
+            <p className="text-muted-foreground">Administración de planes de capacitación</p>
           </div>
           <Button onClick={handleCreate} className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
