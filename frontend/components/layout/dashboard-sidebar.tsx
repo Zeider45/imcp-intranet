@@ -54,90 +54,74 @@ export function DashboardSidebar() {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen border-r border-sidebar-border bg-sidebar transition-all duration-300",
+        "fixed left-0 top-0 z-40 h-screen bg-white border-r border-gray-200 flex flex-col transition-all duration-300",
         collapsed ? "w-16" : "w-64"
       )}
     >
-      <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
+      <div className="p-6 border-b border-gray-200">
         {!collapsed && (
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-              IM
-            </div>
-            <span className="font-semibold text-sidebar-foreground">IMCP</span>
-          </div>
+          <h1 className="text-blue-600">Intranet IMCP</h1>
         )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="rounded-md p-1.5 hover:bg-sidebar-accent text-sidebar-foreground"
-          aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
-        >
-          <ChevronRight
-            className={cn(
-              "h-4 w-4 transition-transform",
-              !collapsed && "rotate-180"
-            )}
-          />
-        </button>
+        {collapsed && (
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="w-full text-center text-blue-600 hover:text-blue-700"
+            aria-label="Expandir menú"
+          >
+            <ChevronRight className="h-5 w-5 mx-auto" />
+          </button>
+        )}
+        {!collapsed && (
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="absolute top-6 right-4 text-gray-400 hover:text-gray-600"
+            aria-label="Colapsar menú"
+          >
+            <ChevronRight className="h-4 w-4 rotate-180" />
+          </button>
+        )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto p-3 space-y-6">
-        {navigation.map((group) => (
-          <div key={group.title}>
-            {!collapsed && (
-              <h3 className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {group.title}
-              </h3>
-            )}
-            <div className="space-y-1">
-              {group.items.map((item) => {
-                const isActive = pathname === item.href;
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
-                      isActive
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    )}
-                    title={collapsed ? item.title : undefined}
-                  >
-                    {Icon && <Icon className="h-5 w-5 flex-shrink-0" />}
-                    {!collapsed && (
-                      <>
-                        <span className="flex-1">{item.title}</span>
-                        {item.badge && (
-                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
-                            {item.badge}
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+      <nav className="flex-1 p-4">
+        <ul className="space-y-2">
+          {navigation.flatMap((group) => group.items).map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+                    isActive
+                      ? "bg-blue-50 text-blue-600"
+                      : "text-gray-700 hover:bg-gray-50"
+                  )}
+                  title={collapsed ? item.title : undefined}
+                >
+                  {Icon && <Icon className="w-5 h-5" />}
+                  {!collapsed && <span>{item.title}</span>}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
 
-      <div className="border-t border-sidebar-border p-3">
+      <div className="p-4 border-t border-gray-200">
         <div
           className={cn(
             "flex items-center gap-3 rounded-lg px-3 py-2",
             collapsed && "justify-center"
           )}
         >
-          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-white text-xs font-bold">
             JD
           </div>
           {!collapsed && (
             <div className="flex-1 text-sm">
-              <p className="font-medium text-sidebar-foreground">Juan Pérez</p>
-              <p className="text-xs text-muted-foreground">Administrador</p>
+              <p className="font-medium text-gray-900">Juan Pérez</p>
+              <p className="text-xs text-gray-600">Administrador</p>
             </div>
           )}
         </div>
