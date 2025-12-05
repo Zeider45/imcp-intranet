@@ -2,6 +2,16 @@
 
 Este documento describe los módulos implementados en la intranet con sus características y endpoints.
 
+## 🎯 Optimizaciones Recientes
+
+**Módulo de Capacitaciones Unificado:**
+Los tres módulos de capacitaciones han sido unificados en una sola interfaz integrada:
+- ✅ **Antes**: Tres módulos separados (Capacitaciones, Planes de Capacitación, Sesiones de Capacitación)
+- ✅ **Ahora**: Un solo módulo en `/capacitaciones` con vistas diferenciadas para usuarios y administradores
+- ✅ **Backend**: Sin cambios, todos los endpoints y modelos se mantienen
+- ✅ **Frontend**: Nueva interfaz unificada con tabs organizados por función
+- ✅ **Navegación**: Simplificada a un solo enlace "Capacitaciones"
+
 ## 📚 Módulos Disponibles
 
 ### 1. Departamentos
@@ -957,20 +967,39 @@ POST   /api/policy-distributions/{id}/acknowledge/ - Acusar recibo
 
 ---
 
-### 21. Planificación de Capacitaciones
+### 21. Sistema de Capacitaciones (Módulo Unificado)
 
-Sistema para planificar y gestionar capacitaciones técnicas para analistas.
+**NOTA:** Este módulo unifica los antiguos módulos de "Planificación de Capacitaciones", "Sesiones de Capacitación" y "Asistencia a Capacitaciones" en una sola interfaz integrada.
 
-**Características:**
-- Planes de capacitación por origen
-- Alcance intergerencial e interdepartamental
-- Revisión y aprobación de presupuesto
-- Gestión de proveedores de capacitación
-- Cotizaciones con temario, costo y fechas
-- Calendario anual de capacitaciones
+Sistema completo para gestionar el ciclo de vida de capacitaciones: planificación, sesiones, asignación y seguimiento.
 
-**Endpoints:**
+**Características Principales:**
+
+**Vista de Administrador:**
+- Gestión de usuarios por grupo/departamento
+- Búsqueda y filtrado de usuarios
+- Creación de sesiones de capacitación
+- Asignación masiva de usuarios a sesiones
+- Calendario de sesiones programadas
+- Gestión de planes de capacitación
+- Gestión de proveedores y cotizaciones
+
+**Vista de Usuario:**
+- Capacitaciones pendientes con confirmación/rechazo
+- Historial de capacitaciones completadas
+- Calificaciones y certificados
+- Vista de calendario personal
+- Notificaciones de nuevas asignaciones
+
+**Frontend Unificado:**
+- Ruta principal: `/capacitaciones`
+- Toggle entre vista de usuario y administrador (para admins)
+- Tabs organizados por función
+- Interfaz intuitiva con cards y tablas
+
+**Endpoints del Backend (sin cambios):**
 ```
+# Planes de Capacitación
 GET    /api/training-plans/               - Listar planes
 POST   /api/training-plans/               - Crear plan
 GET    /api/training-plans/calendar/      - Calendario de capacitaciones
@@ -978,16 +1007,37 @@ GET    /api/training-plans/{id}/          - Obtener plan específico
 POST   /api/training-plans/{id}/approve_budget/ - Aprobar presupuesto
 POST   /api/training-plans/{id}/assign_manager/ - Asignar gerente
 
+# Proveedores
 GET    /api/training-providers/           - Listar proveedores
 POST   /api/training-providers/           - Crear proveedor
 GET    /api/training-providers/active/    - Proveedores activos
 
+# Cotizaciones
 GET    /api/training-quotations/          - Listar cotizaciones
 POST   /api/training-quotations/          - Crear cotización
 POST   /api/training-quotations/{id}/select/ - Seleccionar cotización
+
+# Sesiones
+GET    /api/training-sessions/            - Listar sesiones
+POST   /api/training-sessions/            - Crear sesión
+GET    /api/training-sessions/upcoming/   - Sesiones próximas
+GET    /api/training-sessions/{id}/       - Obtener sesión específica
+POST   /api/training-sessions/{id}/confirm/ - Confirmar sesión
+POST   /api/training-sessions/{id}/complete/ - Completar sesión
+
+# Asistencias
+GET    /api/training-attendances/         - Listar asistencias
+POST   /api/training-attendances/         - Crear asistencia
+GET    /api/training-attendances/my_invitations/ - Mis convocatorias
+POST   /api/training-attendances/{id}/confirm_attendance/ - Confirmar asistencia
+POST   /api/training-attendances/{id}/decline_attendance/ - Rechazar asistencia
+POST   /api/training-attendances/{id}/record_attendance/ - Registrar asistencia
+POST   /api/training-attendances/{id}/issue_certificate/ - Emitir certificado
 ```
 
-**Modelo TrainingPlan:**
+**Modelos (sin cambios):**
+
+**TrainingPlan:**
 ```python
 - title: CharField (max_length=300)
 - description: TextField
@@ -1003,39 +1053,7 @@ POST   /api/training-quotations/{id}/select/ - Seleccionar cotización
 - budget_approved: BooleanField (default=False)
 ```
 
----
-
-### 22. Asistencia a Capacitaciones
-
-Sistema de convocatoria, confirmación y asistencia a sesiones de capacitación.
-
-**Características:**
-- Convocatoria oficial de capacitación
-- Confirmación o justificación de asistencia
-- Lista de asistencia con firma
-- Registro de hora de llegada y salida
-- Evaluación de conocimientos
-- Emisión de certificados de participación
-
-**Endpoints:**
-```
-GET    /api/training-sessions/            - Listar sesiones
-POST   /api/training-sessions/            - Crear sesión
-GET    /api/training-sessions/upcoming/   - Sesiones próximas
-GET    /api/training-sessions/{id}/       - Obtener sesión específica
-POST   /api/training-sessions/{id}/confirm/ - Confirmar sesión
-POST   /api/training-sessions/{id}/complete/ - Completar sesión
-
-GET    /api/training-attendances/         - Listar asistencias
-POST   /api/training-attendances/         - Crear asistencia
-GET    /api/training-attendances/my_invitations/ - Mis convocatorias
-POST   /api/training-attendances/{id}/confirm_attendance/ - Confirmar asistencia
-POST   /api/training-attendances/{id}/decline_attendance/ - Rechazar asistencia
-POST   /api/training-attendances/{id}/record_attendance/ - Registrar asistencia
-POST   /api/training-attendances/{id}/issue_certificate/ - Emitir certificado
-```
-
-**Modelo TrainingSession:**
+**TrainingSession:**
 ```python
 - training_plan: ForeignKey (TrainingPlan)
 - title: CharField (max_length=300)
@@ -1049,6 +1067,27 @@ POST   /api/training-attendances/{id}/issue_certificate/ - Emitir certificado
 - max_participants: IntegerField (null=True)
 - confirmation_deadline: DateField (null=True)
 ```
+
+**TrainingAttendance:**
+```python
+- session: ForeignKey (TrainingSession)
+- analyst: ForeignKey (User)
+- invited_by: ForeignKey (User, null=True)
+- confirmation_status: CharField (choices=['pending', 'confirmed', 'declined', 'rescheduled'])
+- confirmation_date: DateTimeField (null=True)
+- decline_reason: TextField (blank=True)
+- justification_document: FileField (null=True)
+- attendance_status: CharField (choices=['not_recorded', 'present', 'absent_justified', 'absent_unjustified', 'late'])
+- arrival_time: TimeField (null=True)
+- departure_time: TimeField (null=True)
+- attendance_signature: BooleanField (default=False)
+- evaluation_score: IntegerField (null=True)
+- certificate_issued: BooleanField (default=False)
+```
+
+**Migración de Rutas:**
+- `/training-plans` y `/training-sessions` ahora redirigen a `/capacitaciones`
+- Toda la funcionalidad está accesible desde la ruta unificada
 
 ---
 
