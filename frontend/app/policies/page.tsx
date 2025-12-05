@@ -77,118 +77,109 @@ export default function PoliciesPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Políticas</h1>
-            <p className="text-gray-600">Políticas y normativas institucionales</p>
-          </div>
-          <Link href="/policies/admin">
-            <Button variant="outline" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              Administrar
-            </Button>
-          </Link>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-gray-900 mb-2">Políticas y Reglamentos</h1>
+          <p className="text-gray-600">Consulta las políticas y reglamentos del banco</p>
+        </div>
+        <Link href="/policies/admin">
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            Administrar
+          </Button>
+        </Link>
+      </div>
+
+      {/* Area Filter */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Building2 className="w-5 h-5 text-gray-600" />
+          <span className="text-gray-700">Filtrar por Área:</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setSelectedArea('all')}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              selectedArea === 'all'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Todas
+          </button>
+          {areas.slice(1).map((area) => (
+            <button
+              key={area}
+              onClick={() => setSelectedArea(area)}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                selectedArea === area
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {originLabels[area] || area}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Filters */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-              <Input
-                type="text"
-                placeholder="Buscar políticas..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-gray-600" />
-              <Select value={selectedArea} onValueChange={setSelectedArea}>
-                <SelectTrigger className="w-full md:w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas</SelectItem>
-                  {areas.slice(1).map((area) => (
-                    <SelectItem key={area} value={area}>
-                      {originLabels[area] || area}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Policies Grid */}
+      {/* Policies List */}
       {policies.length === 0 ? (
         <div className="text-center py-12">
           <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-600">No se encontraron políticas</p>
+          <p className="text-gray-600">No se encontraron políticas para esta área</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="space-y-4">
           {policies.map((policy) => (
-            <Card
+            <div
               key={policy.id}
-              className="hover:shadow-lg transition-shadow"
+              className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow"
             >
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4 mb-4">
-                  <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-6 h-6 text-blue-600" />
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start gap-4 flex-1">
+                  <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-6 h-6 text-purple-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-gray-900 mb-1">{policy.title}</h3>
-                    <p className="text-xs text-gray-600">
-                      {originLabels[policy.origin] || policy.origin}
-                    </p>
+                    <h3 className="text-gray-900 mb-2">{policy.title}</h3>
+                    <div className="flex flex-wrap gap-4 text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4" />
+                        <span>{originLabels[policy.origin] || policy.origin}</span>
+                      </div>
+                      <span>Versión {policy.version}</span>
+                      <span>Vigente desde: {policy.effective_date ? new Date(policy.effective_date).toLocaleDateString() : 'N/A'}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-2 mb-4">
-                  <div className="flex justify-between text-xs text-gray-600">
-                    <span>Vigencia:</span>
-                    <span>{policy.effective_date ? new Date(policy.effective_date).toLocaleDateString() : 'N/A'}</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-600">
-                    <span>Versión:</span>
-                    <span>{policy.version}</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-600">
-                    <span>Actualización:</span>
-                    <span>{new Date(policy.updated_at).toLocaleDateString()}</span>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                <div className="flex gap-2 flex-shrink-0 ml-4">
+                  <button 
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                     onClick={() => {
-                      // In a real app, this would open a viewer or download the policy
                       alert(`Ver política: ${policy.title}`);
                     }}
                   >
-                    <Download className="w-4 h-4 mr-2" />
+                    <Download className="w-4 h-4" />
                     Descargar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
+                  </button>
+                  <button 
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                     onClick={() => {
                       alert(`Ver detalles: ${policy.title}`);
                     }}
                   >
                     <Eye className="w-4 h-4" />
-                  </Button>
+                  </button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                <p className="text-gray-600">
+                  Última actualización: {new Date(policy.updated_at).toLocaleDateString()}
+                </p>
+                <p className="text-gray-600">Código: {policy.code}</p>
+              </div>
+            </div>
           ))}
         </div>
       )}
