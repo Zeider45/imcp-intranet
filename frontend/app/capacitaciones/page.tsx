@@ -16,7 +16,9 @@ export default function CapacitacionesPage() {
   const [loading, setLoading] = useState(true);
   const [asignadas, setAsignadas] = useState<CapacitacionWithAttendance[]>([]);
   const [asistidas, setAsistidas] = useState<CapacitacionWithAttendance[]>([]);
-  const isAdmin = true; // TODO: Get from auth context
+  // TODO: Replace with actual auth context check for admin role
+  // Example: const { user } = useAuth(); const isAdmin = user?.role === 'admin';
+  const isAdmin = false; // Disabled until auth integration is complete
 
   useEffect(() => {
     const fetchData = async () => {
@@ -35,13 +37,16 @@ export default function CapacitacionesPage() {
           
           const sessionsResponses = await Promise.all(sessionPromises);
           
-          // Combine sessions with attendance data
-          const combinedData: CapacitacionWithAttendance[] = sessionsResponses
-            .map((response, index) => ({
-              session: response.data!,
-              attendance: attendances[index],
-            }))
-            .filter(item => item.session);
+          // Combine sessions with attendance data, filtering out null responses
+          const combinedData = sessionsResponses
+            .map((response, index) => {
+              if (!response.data) return null;
+              return {
+                session: response.data,
+                attendance: attendances[index],
+              } as CapacitacionWithAttendance;
+            })
+            .filter((item): item is CapacitacionWithAttendance => item !== null);
           
           // Split into assigned (upcoming) and attended (completed)
           const assigned = combinedData.filter(
@@ -185,6 +190,7 @@ export default function CapacitacionesPage() {
             </div>
 
             <div className="space-y-2 mb-4 max-h-96 overflow-y-auto">
+              {/* TODO: Replace with dynamic employee list from API */}
               {[
                 'Juan Pérez - Operaciones',
                 'María González - Atención al Cliente',
@@ -426,33 +432,42 @@ export default function CapacitacionesPage() {
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-2">
-                {Array.from({ length: 35 }, (_, i) => {
-                  const day = i - 2;
-                  // Check if any training is on this day
-                  const hasEvent = asignadas.some(({ session }) => {
-                    const sessionDate = new Date(session.start_datetime);
-                    const currentMonth = new Date().getMonth();
-                    const currentYear = new Date().getFullYear();
-                    return sessionDate.getDate() === day && 
-                           sessionDate.getMonth() === currentMonth &&
-                           sessionDate.getFullYear() === currentYear;
-                  });
+                {(() => {
+                  const now = new Date();
+                  const year = now.getFullYear();
+                  const month = now.getMonth();
+                  const firstDay = new Date(year, month, 1).getDay();
+                  const daysInMonth = new Date(year, month + 1, 0).getDate();
+                  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
                   
-                  return (
-                    <div
-                      key={i}
-                      className={`aspect-square flex items-center justify-center rounded-lg text-sm ${
-                        day > 0 && day <= 31
-                          ? hasEvent
-                            ? 'bg-blue-600 text-white cursor-pointer hover:bg-blue-700'
-                            : 'bg-gray-50 hover:bg-gray-100 cursor-pointer'
-                          : 'bg-transparent'
-                      }`}
-                    >
-                      {day > 0 && day <= 31 && day}
-                    </div>
-                  );
-                })}
+                  return Array.from({ length: totalCells }, (_, i) => {
+                    const dayNumber = i - firstDay + 1;
+                    const isValidDay = dayNumber > 0 && dayNumber <= daysInMonth;
+                    
+                    // Check if any training is on this day
+                    const hasEvent = isValidDay && asignadas.some(({ session }) => {
+                      const sessionDate = new Date(session.start_datetime);
+                      return sessionDate.getDate() === dayNumber && 
+                             sessionDate.getMonth() === month &&
+                             sessionDate.getFullYear() === year;
+                    });
+                    
+                    return (
+                      <div
+                        key={i}
+                        className={`aspect-square flex items-center justify-center rounded-lg text-sm ${
+                          isValidDay
+                            ? hasEvent
+                              ? 'bg-blue-600 text-white cursor-pointer hover:bg-blue-700'
+                              : 'bg-gray-50 hover:bg-gray-100 cursor-pointer'
+                            : 'bg-transparent'
+                        }`}
+                      >
+                        {isValidDay && dayNumber}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
               <div className="mt-6 space-y-3">
                 <p className="text-sm font-medium text-gray-700">Próximos eventos:</p>
