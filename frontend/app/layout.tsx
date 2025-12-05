@@ -2,21 +2,11 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { AuthProvider } from "@/lib/auth-context";
 import { LayoutContent } from "@/components/layout/layout-content";
-import localFont from "next/font/local";
-
 import "./globals.css";
 
-const myFont = localFont({
-  // Coloca el archivo de fuente en `public/fonts/` y referencia la ruta desde la raíz
-  // Ejemplo: frontend/public/fonts/Montserrat-VariableFont_wght.ttf
-  src: "../public/fonts/Montserrat-VariableFont_wght.ttf",
-  variable: "--font-custom",
-  display: "swap",
-});
 export const metadata: Metadata = {
   title: "Intranet IMCP",
-  description:
-    "Sistema de intranet corporativa - Instituto Mexicano de Contadores Públicos",
+  description: "Sistema de intranet corporativa - Instituto Mexicano de Contadores Públicos",
   generator: "v0.app",
   icons: {
     icon: [
@@ -44,7 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={myFont.variable}>
+      <body className="font-sans antialiased">
         <AuthProvider>
           <LayoutContent>{children}</LayoutContent>
         </AuthProvider>

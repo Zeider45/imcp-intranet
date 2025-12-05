@@ -2,233 +2,204 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { QuickActionCard } from "@/components/dashboard/quick-action-card";
 import { RecentActivityItem } from "@/components/dashboard/recent-activity-item";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, FileText, Calendar, BookOpen, GraduationCap, TrendingUp, Plus, Send, Clock } from 'lucide-react';
+import { Users, FileText, Calendar, BookOpen, TrendingUp, Plus, Send, Clock } from 'lucide-react';
 
 export default function DashboardPage() {
   return (
-    <div className="p-8">
+    <div className="space-y-6">
       {/* Welcome Section */}
-      <div className="mb-8">
-        <h1 className="text-gray-900 mb-2">
-          Bienvenido a la Intranet
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">
+          Bienvenido de nuevo, Juan
         </h1>
-        <p className="text-gray-600">
-          Panel de control principal
+        <p className="text-muted-foreground mt-1">
+          Aquí está un resumen de tu actividad hoy
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Empleados"
-          value="1,247"
+          title="Empleados Activos"
+          value="234"
           icon={Users}
-          color="blue"
+          trend={{ value: 12, isPositive: true }}
         />
         <StatCard
           title="Documentos Compartidos"
-          value="856"
+          value="1,429"
           icon={FileText}
-          color="green"
+          description="Este mes"
         />
         <StatCard
           title="Eventos Próximos"
-          value="12"
+          value="8"
           icon={Calendar}
-          color="purple"
+          description="Esta semana"
         />
         <StatCard
           title="Cursos Completados"
-          value="342"
-          icon={BookOpen}
-          color="orange"
+          value="156"
+          icon={TrendingUp}
+          trend={{ value: 23, isPositive: true }}
         />
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2">
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Actividad Reciente</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-blue-50 text-blue-600">
-                    <FileText className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">Nuevo documento: Manual de Procedimientos 2024</p>
-                    <p className="text-sm text-gray-600">María González · Hace 2 horas</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-green-50 text-green-600">
-                    <GraduationCap className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">Capacitación completada: Seguridad Bancaria</p>
-                    <p className="text-sm text-gray-600">Juan Pérez · Hace 3 horas</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-purple-50 text-purple-600">
-                    <Users className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">Nueva vacante: Analista de Crédito</p>
-                    <p className="text-sm text-gray-600">Recursos Humanos · Hace 5 horas</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-orange-50 text-orange-600">
-                    <FileText className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">Política actualizada: Código de Conducta</p>
-                    <p className="text-sm text-gray-600">Administración · Hace 1 día</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        <div>
-
-          {/* Upcoming Events */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Eventos Próximos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-blue-500">
-                  <p className="text-sm font-medium text-gray-900 mb-3">Capacitación: Atención al Cliente</p>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs text-gray-600">
-                      <Calendar className="w-4 h-4" />
-                      <span>15 Dic 2024</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-600">
-                      <Clock className="w-4 h-4" />
-                      <span>10:00 AM</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-purple-500">
-                  <p className="text-sm font-medium text-gray-900 mb-3">Reunión General de Personal</p>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs text-gray-600">
-                      <Calendar className="w-4 h-4" />
-                      <span>18 Dic 2024</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-600">
-                      <Clock className="w-4 h-4" />
-                      <span>2:00 PM</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-green-500">
-                  <p className="text-sm font-medium text-gray-900 mb-3">Taller: Gestión de Riesgos</p>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs text-gray-600">
-                      <Calendar className="w-4 h-4" />
-                      <span>20 Dic 2024</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-600">
-                      <Clock className="w-4 h-4" />
-                      <span>9:00 AM</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Quick Actions */}
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Acciones Rápidas</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <QuickActionCard
+            title="Nueva Solicitud"
+            description="Crear solicitud de vacaciones o permiso"
+            icon={Plus}
+            href="/solicitudes/nueva"
+          />
+          <QuickActionCard
+            title="Subir Documento"
+            description="Agregar nuevo documento a la biblioteca"
+            icon={Send}
+            href="/library-documents"
+          />
+          <QuickActionCard
+            title="Explorar Cursos"
+            description="Ver catálogo de formación disponible"
+            icon={BookOpen}
+            href="/capacitaciones"
+          />
+          <QuickActionCard
+            title="Ver Calendario"
+            description="Revisar eventos y actividades"
+            icon={Clock}
+            href="/"
+          />
         </div>
       </div>
 
-      {/* Bottom Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Acciones Rápidas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <QuickActionCard
-                  title="Subir Documento"
-                  description="Agregar nuevo documento"
-                  icon={Plus}
-                  href="/library-documents"
-                />
-                <QuickActionCard
-                  title="Ver Calendario"
-                  description="Revisar eventos próximos"
-                  icon={Calendar}
-                  href="/"
-                />
-                <QuickActionCard
-                  title="Ver Vacantes"
-                  description="Explorar oportunidades"
-                  icon={Users}
-                  href="/internal-vacancies"
-                />
-                <QuickActionCard
-                  title="Nueva Publicación"
-                  description="Publicar en el foro"
-                  icon={Send}
-                  href="/forum"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Últimas Publicaciones del Foro</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="border-b border-gray-200 pb-6">
-                  <div className="flex items-start gap-4 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white flex-shrink-0 text-xs font-bold">
-                      AM
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="text-sm font-medium text-gray-900">Ana Martínez</p>
-                        <span className="text-gray-400">·</span>
-                        <p className="text-xs text-gray-600">Hace 1 hora</p>
-                      </div>
-                      <p className="text-xs text-gray-600">Gerente de Operaciones</p>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-700 mb-4">¡Felicitaciones al equipo de atención al cliente por alcanzar el 98% de satisfacción este mes! 🎉</p>
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Actividad Reciente</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <RecentActivityItem
+                icon="📢"
+                color="primary"
+                title="Nuevo anuncio publicado"
+                description="Actualización de políticas de trabajo remoto"
+                time="Hace 2 horas"
+              />
+              <RecentActivityItem
+                icon="📄"
+                color="chart-2"
+                title="Documento compartido"
+                description="María García compartió 'Informe Q1 2025'"
+                time="Hace 5 horas"
+              />
+              <RecentActivityItem
+                icon="✅"
+                color="chart-3"
+                title="Tarea completada"
+                description="Revisión de presupuesto anual finalizada"
+                time="Ayer"
+              />
+              <RecentActivityItem
+                icon="🎓"
+                color="chart-4"
+                title="Curso completado"
+                description="15 empleados completaron 'Seguridad Digital'"
+                time="Hace 2 días"
+              />
+              <RecentActivityItem
+                icon="👥"
+                color="chart-5"
+                title="Nuevo miembro"
+                description="Ana López se unió al Departamento de TI"
+                time="Hace 3 días"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Upcoming Events */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Próximos Eventos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex gap-4">
+                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-lg bg-primary/10 flex-shrink-0">
+                  <span className="text-xs font-semibold text-primary">
+                    DIC
+                  </span>
+                  <span className="text-lg font-bold text-primary">15</span>
                 </div>
-                <div className="border-b border-gray-200 pb-6">
-                  <div className="flex items-start gap-4 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white flex-shrink-0 text-xs font-bold">
-                      RS
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="text-sm font-medium text-gray-900">Roberto Silva</p>
-                        <span className="text-gray-400">·</span>
-                        <p className="text-xs text-gray-600">Hace 3 horas</p>
-                      </div>
-                      <p className="text-xs text-gray-600">Director de Recursos Humanos</p>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-700 mb-4">Recordatorio: La capacitación de seguridad bancaria es obligatoria para todos los empleados. Fecha límite: 20 de diciembre.</p>
+                <div className="flex-1">
+                  <p className="font-semibold text-sm">
+                    Reunión General Mensual
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    10:00 AM - Sala de conferencias principal
+                  </p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+
+              <div className="flex gap-4">
+                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-lg bg-chart-2/10 flex-shrink-0">
+                  <span className="text-xs font-semibold text-chart-2">
+                    DIC
+                  </span>
+                  <span className="text-lg font-bold text-chart-2">18</span>
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-sm">
+                    Taller de Liderazgo
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    2:00 PM - Virtual (Zoom)
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-lg bg-chart-3/10 flex-shrink-0">
+                  <span className="text-xs font-semibold text-chart-3">
+                    DIC
+                  </span>
+                  <span className="text-lg font-bold text-chart-3">22</span>
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-sm">
+                    Celebración de Aniversario
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    6:00 PM - Área de recreación
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-lg bg-chart-4/10 flex-shrink-0">
+                  <span className="text-xs font-semibold text-chart-4">
+                    DIC
+                  </span>
+                  <span className="text-lg font-bold text-chart-4">25</span>
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-sm">
+                    Capacitación en Software
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    9:00 AM - Laboratorio de cómputo
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
