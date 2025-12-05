@@ -176,7 +176,7 @@ export default function LibraryDocumentsPage() {
                   Descargar
                 </button>
                 <button
-                  className="px-4 py-2 border border-border text-foreground rounded-lg hover:bg-accent dark:hover:bg-accent transition-colors"
+                  className="px-4 py-2 border border-border text-foreground rounded-lg hover:bg-accent transition-colors"
                   onClick={() => handleView(doc)}
                 >
                   <Eye className="w-4 h-4" />
