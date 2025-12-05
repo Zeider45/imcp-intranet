@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { 
   Search, 
   Filter,
   FileText, 
   Download,
   Eye,
+  Settings,
 } from 'lucide-react';
 import { libraryDocumentApi } from '@/lib/api';
 import type { LibraryDocument, PaginatedResponse } from '@/lib/api/types';
@@ -83,9 +85,17 @@ export default function LibraryDocumentsPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-gray-900 mb-2">Biblioteca de Documentos</h1>
-        <p className="text-gray-600">Accede a manuales y documentación oficial</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-gray-900 mb-2">Biblioteca de Documentos</h1>
+          <p className="text-gray-600">Accede a manuales y documentación oficial</p>
+        </div>
+        <Link href="/library-documents/admin">
+          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            Administrar
+          </button>
+        </Link>
       </div>
 
       {/* Filters */}
@@ -149,7 +159,7 @@ export default function LibraryDocumentsPage() {
                   <span>{new Date(doc.created_at).toLocaleDateString()}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
-                  <span>Tamaño:</span>
+                  <span>Versión:</span>
                   <span>{doc.version}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
