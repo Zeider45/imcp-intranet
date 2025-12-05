@@ -30,8 +30,6 @@ const navigation: NavGroup[] = [
     title: "Capacitación",
     items: [
       { title: "Capacitaciones", href: "/capacitaciones", icon: GraduationCap },
-      { title: "Planes de Capacitación", href: "/training-plans", icon: CalendarDays },
-      { title: "Sesiones de Capacitación", href: "/training-sessions", icon: CalendarDays },
     ],
   },
   {
