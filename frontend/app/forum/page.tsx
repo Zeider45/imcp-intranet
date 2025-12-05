@@ -2,73 +2,23 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
 import { 
-  MessageSquare, 
-  Plus, 
-  Eye,
-  RefreshCw,
-  Pin,
-  Lock,
-  MessageCircle,
-  TrendingUp,
-  Clock,
-  Users,
-  Heart,
-  Image as ImageIcon,
+  ThumbsUp, 
+  MessageCircle, 
+  Share2, 
+  Plus,
+  MoreVertical,
 } from 'lucide-react';
-import { forumCategoryApi, forumPostApi } from '@/lib/api';
-import type { ForumCategory, ForumPost, PaginatedResponse } from '@/lib/api/types';
-import { getCategoryColor, getAuthorAvatar } from '@/lib/forum-utils';
+import { forumPostApi } from '@/lib/api';
+import type { ForumPost, PaginatedResponse } from '@/lib/api/types';
 
 export default function ForumPage() {
-  const [categories, setCategories] = useState<ForumCategory[]>([]);
   const [posts, setPosts] = useState<ForumPost[]>([]);
-  const [replies, setReplies] = useState<ForumPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<ForumCategory | null>(null);
-  const [selectedPost, setSelectedPost] = useState<ForumPost | null>(null);
-  
-  // Dialog states
-  const [isViewPostDialogOpen, setIsViewPostDialogOpen] = useState(false);
-  const [isReplyDialogOpen, setIsReplyDialogOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Form data
-  const [replyForm, setReplyForm] = useState({
-    content: '',
-  });
 
-  // Fetch categories
-  const fetchCategories = useCallback(async () => {
-    const response = await forumCategoryApi.list();
-    if (response.data) {
-      setCategories((response.data as PaginatedResponse<ForumCategory>).results || []);
-    }
-  }, []);
-
-  // Fetch posts by category
-  const fetchPosts = useCallback(async (categoryId?: number) => {
+  const fetchPosts = useCallback(async () => {
     setLoading(true);
-    const params: {
-      main_posts_only?: boolean;
-      category?: number;
-    } = { main_posts_only: true };
-    if (categoryId) params.category = categoryId;
-    
+    const params = { main_posts_only: true };
     const response = await forumPostApi.list(params);
     if (response.data) {
       setPosts((response.data as PaginatedResponse<ForumPost>).results || []);
@@ -76,424 +26,169 @@ export default function ForumPage() {
     setLoading(false);
   }, []);
 
-  // Fetch replies for a post
-  const fetchReplies = useCallback(async (postId: number) => {
-    const response = await forumPostApi.getReplies(postId);
-    if (response.data) {
-      setReplies((response.data as PaginatedResponse<ForumPost>).results || []);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchCategories();
     fetchPosts();
-  }, [fetchCategories, fetchPosts]);
+  }, [fetchPosts]);
 
-  // Post handlers
-  const handleCreateReply = async () => {
-    if (!selectedPost) return;
-    setIsSubmitting(true);
-    try {
-      const response = await forumPostApi.create({
-        title: `Re: ${selectedPost.title}`,
-        content: replyForm.content,
-        category: selectedPost.category,
-        parent_post: selectedPost.id,
-      });
-      
-      if (response.data) {
-        setIsReplyDialogOpen(false);
-        setReplyForm({ content: '' });
-        fetchReplies(selectedPost.id);
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleViewPost = async (post: ForumPost) => {
-    await forumPostApi.incrementViews(post.id);
-    setSelectedPost(post);
-    fetchReplies(post.id);
-    setIsViewPostDialogOpen(true);
-  };
-
-  const handleToggleLike = async (postId: number, event?: React.MouseEvent) => {
-    if (event) {
-      event.stopPropagation(); // Prevent opening the post dialog
-    }
+  const handleToggleLike = async (postId: number) => {
     const response = await forumPostApi.toggleLike(postId);
     if (response.data) {
-      const updatedPost = response.data;
-      // Update the posts list with the new like count
-      setPosts(posts.map(p => p.id === postId ? updatedPost : p));
-      // Update selected post if it's the one being liked
-      if (selectedPost && selectedPost.id === postId) {
-        setSelectedPost(updatedPost);
-      }
+      setPosts(posts.map(p => p.id === postId ? response.data as ForumPost : p));
     }
   };
 
-  const selectCategory = (category: ForumCategory) => {
-    setSelectedCategory(category);
-    fetchPosts(category.id);
+  const getAuthorInitials = (name: string) => {
+    const parts = name.split(' ');
+    return parts.map(p => p[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  const totalPosts = categories.reduce((sum, cat) => sum + cat.posts_count, 0);
-  const totalReplies = posts.reduce((sum, p) => sum + p.replies_count, 0);
+  const getRandomGradient = (id: number) => {
+    const gradients = [
+      'from-blue-500 to-purple-500',
+      'from-green-500 to-blue-500',
+      'from-purple-500 to-pink-500',
+      'from-orange-500 to-red-500',
+      'from-teal-500 to-green-500',
+    ];
+    return gradients[id % gradients.length];
+  };
 
-  // Get unique active users (authors)
-  const activeUsers = Array.from(new Set(posts.map(p => p.author_name))).slice(0, 4);
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto" />
+          <p className="mt-4 text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <MessageSquare className="h-8 w-8 text-primary" />
-            ForoTech
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Espacio de discusión y colaboración entre empleados
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="ghost" asChild>
-            <Link href="/forum/admin">Admin</Link>
-          </Button>
+    <div className="p-8 max-w-4xl mx-auto">
+      <div className="mb-6">
+        <h1 className="text-gray-900 mb-2">Foro de Comunicación</h1>
+        <p className="text-gray-600">
+          Mantente al día con las novedades del banco
+        </p>
+      </div>
+
+      {/* Create Post Card */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white flex-shrink-0 text-xs font-bold">
+            US
+          </div>
+          <Link href="/forum/admin" className="flex-1">
+            <div className="px-4 py-2 bg-gray-50 text-gray-600 rounded-full text-left hover:bg-gray-100 transition-colors cursor-pointer">
+              Comparte una actualización con el equipo...
+            </div>
+          </Link>
+          <Link href="/forum/admin">
+            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Publicar
+            </button>
+          </Link>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/10 rounded-lg">
-              <MessageSquare className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Temas Totales</p>
-              <p className="text-2xl font-bold text-foreground">{totalPosts.toLocaleString()}</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/10 rounded-lg">
-              <Users className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Miembros</p>
-              <p className="text-2xl font-bold text-foreground">{new Set(posts.map(p => p.author)).size.toLocaleString()}</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-primary/10 rounded-lg">
-              <TrendingUp className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Respuestas</p>
-              <p className="text-2xl font-bold text-foreground">{totalReplies.toLocaleString()}</p>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Main Content with Sidebar Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Main Content */}
-        <div className="lg:col-span-3 space-y-4">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-foreground">Temas Recientes</h2>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => fetchPosts(selectedCategory?.id)}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Más Recientes
-              </Button>
-              <Button variant="outline" size="sm">
-                Más Populares
-              </Button>
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : posts.length === 0 ? (
-            <Card className="p-6">
-              <div className="text-center py-8 text-muted-foreground">
-                <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No se encontraron publicaciones</p>
-                <p className="text-sm mt-2">Los administradores pueden crear nuevos posts desde el panel de administración</p>
+      {/* Posts Feed */}
+      <div className="space-y-6">
+        {posts.map((post) => (
+          <div key={post.id} className="bg-white rounded-lg border border-gray-200 p-6">
+            {/* Post Header */}
+            <div className="flex items-start gap-4 mb-4">
+              <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getRandomGradient(post.id)} flex items-center justify-center text-white flex-shrink-0 text-xs font-bold`}>
+                {getAuthorInitials(post.author_name)}
               </div>
-            </Card>
-          ) : (
-            posts.map((post) => (
-              <Card key={post.id} className="p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handleViewPost(post)}>
-                <div className="flex gap-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={getAuthorAvatar(post.author_name)} />
-                    <AvatarFallback>{post.author_name[0]}</AvatarFallback>
-                  </Avatar>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-4 mb-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          {post.is_pinned && <Pin className="h-4 w-4 text-primary flex-shrink-0" />}
-                          <h3 className="font-semibold text-foreground text-lg hover:text-primary transition-colors text-balance">
-                            {post.title}
-                          </h3>
-                          {post.views_count > 100 && (
-                            <Badge variant="destructive" className="flex-shrink-0">
-                              🔥 Hot
-                            </Badge>
-                          )}
-                          {post.image && (
-                            <Badge variant="outline" className="flex-shrink-0">
-                              <ImageIcon className="h-3 w-3 mr-1" />
-                              Imagen
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          por <span className="font-medium">{post.author_name}</span> en{" "}
-                          <Badge variant="secondary">{post.category_name}</Badge>
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-6 mt-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <MessageSquare className="h-4 w-4" />
-                        <span>{post.replies_count} respuestas</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        <span>{post.views_count} vistas</span>
-                      </div>
-                      <button
-                        onClick={(e) => handleToggleLike(post.id, e)}
-                        className={`flex items-center gap-2 hover:text-red-500 transition-colors ${
-                          post.user_has_liked ? 'text-red-500' : ''
-                        }`}
-                      >
-                        <Heart className={`h-4 w-4 ${post.user_has_liked ? 'fill-current' : ''}`} />
-                        <span>{post.likes_count} likes</span>
-                      </button>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        <span>{new Date(post.created_at).toLocaleDateString('es-ES')}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))
-          )}
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          <Card className="p-6">
-            <h3 className="font-semibold text-foreground mb-4">Categorías</h3>
-            <div className="space-y-3">
-              {categories.filter(c => c.is_active).map((category, idx) => (
-                <div
-                  key={category.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-accent hover:bg-accent/80 cursor-pointer transition-colors"
-                  onClick={() => selectCategory(category)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${getCategoryColor(idx)}`} />
-                    <span className="font-medium text-foreground">{category.name}</span>
-                  </div>
-                  <Badge variant="secondary">{category.posts_count}</Badge>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <h3 className="font-semibold text-foreground mb-4">Usuarios Activos</h3>
-            <div className="space-y-3">
-              {activeUsers.length > 0 ? activeUsers.map((user) => (
-                <div key={user} className="flex items-center gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={getAuthorAvatar(user)} />
-                    <AvatarFallback>{user[0]}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{user}</p>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-green-500 rounded-full" />
-                      <span className="text-xs text-muted-foreground">En línea</span>
-                    </div>
-                  </div>
-                </div>
-              )) : (
-                <p className="text-sm text-muted-foreground">No hay usuarios activos</p>
-              )}
-            </div>
-          </Card>
-        </div>
-      </div>
-
-      {/* View Post Dialog */}
-      <Dialog open={isViewPostDialogOpen} onOpenChange={setIsViewPostDialogOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-center gap-2 mb-2">
-              {selectedPost?.is_pinned && (
-                <Badge variant="secondary" className="gap-1">
-                  <Pin className="h-3 w-3" />
-                  Fijado
-                </Badge>
-              )}
-              {selectedPost?.is_locked && (
-                <Badge variant="outline" className="gap-1">
-                  <Lock className="h-3 w-3" />
-                  Bloqueado
-                </Badge>
-              )}
-              <Badge variant="outline">{selectedPost?.category_name}</Badge>
-            </div>
-            <DialogTitle className="text-xl">{selectedPost?.title}</DialogTitle>
-            <DialogDescription>
-              Por {selectedPost?.author_name} • {selectedPost && new Date(selectedPost.created_at).toLocaleDateString('es-ES', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedPost && (
-            <div className="space-y-6 py-4">
-              {/* Post image */}
-              {selectedPost.image && (
-                <div className="rounded-lg overflow-hidden relative w-full" style={{ minHeight: '200px' }}>
-                  <Image 
-                    src={selectedPost.image} 
-                    alt={selectedPost.title}
-                    width={700}
-                    height={400}
-                    className="w-full h-auto max-h-96 object-contain bg-muted"
-                    unoptimized
-                  />
-                </div>
-              )}
-              
-              {/* Post content */}
-              <div className="p-4 bg-muted rounded-lg">
-                <pre className="text-sm whitespace-pre-wrap font-sans">{selectedPost.content}</pre>
+              <div className="flex-1 min-w-0">
+                <p className="text-gray-900">{post.author_name}</p>
+                <p className="text-gray-600 text-sm">Usuario</p>
+                <p className="text-gray-400 text-xs">{new Date(post.created_at).toLocaleString()}</p>
               </div>
-              
-              {/* Stats and Actions */}
-              <div className="flex items-center gap-4 text-sm">
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <Eye className="h-4 w-4" />
-                  {selectedPost.views_count} vistas
-                </span>
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <MessageCircle className="h-4 w-4" />
-                  {selectedPost.replies_count} respuestas
-                </span>
-                <button
-                  onClick={() => handleToggleLike(selectedPost.id)}
-                  className={`flex items-center gap-1 hover:text-red-500 transition-colors ${
-                    selectedPost.user_has_liked ? 'text-red-500' : 'text-muted-foreground'
-                  }`}
-                >
-                  <Heart className={`h-4 w-4 ${selectedPost.user_has_liked ? 'fill-current' : ''}`} />
-                  <span>{selectedPost.likes_count} likes</span>
+              <Link href="/forum/admin">
+                <button className="text-gray-400 hover:text-gray-600">
+                  <MoreVertical className="w-5 h-5" />
                 </button>
-              </div>
+              </Link>
+            </div>
 
-              {/* Replies Section */}
-              <div className="border-t pt-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-semibold flex items-center gap-2">
-                    <MessageCircle className="h-4 w-4" />
-                    Respuestas ({replies.length})
-                  </h4>
-                  {!selectedPost.is_locked && (
-                    <Button size="sm" onClick={() => setIsReplyDialogOpen(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Responder
-                    </Button>
-                  )}
-                </div>
-                
-                {replies.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No hay respuestas aún. ¡Sé el primero en responder!
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {replies.map((reply) => (
-                      <div key={reply.id} className="p-3 bg-accent/30 rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">{reply.author_name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(reply.created_at).toLocaleDateString('es-ES')}
-                          </span>
-                        </div>
-                        <p className="text-sm">{reply.content}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
+            {/* Post Title & Content */}
+            {post.title && (
+              <h3 className="text-gray-900 font-medium mb-2">{post.title}</h3>
+            )}
+            <p className="text-gray-700 mb-4 whitespace-pre-line">{post.content}</p>
+
+            {/* Post Stats */}
+            <div className="flex items-center gap-6 py-3 border-t border-b border-gray-200 mb-3">
+              <div className="flex items-center gap-2 text-gray-600 text-sm">
+                <ThumbsUp className="w-4 h-4" />
+                <span>{post.likes_count || 0} Me gusta</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-600 text-sm">
+                <MessageCircle className="w-4 h-4" />
+                <span>{post.replies_count || 0} Comentarios</span>
               </div>
             </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsViewPostDialogOpen(false)}>
-              Cerrar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* Reply Dialog */}
-      <Dialog open={isReplyDialogOpen} onOpenChange={setIsReplyDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Responder a: {selectedPost?.title}</DialogTitle>
-            <DialogDescription>
-              Escriba su respuesta a esta publicación
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Textarea
-              placeholder="Escriba su respuesta..."
-              value={replyForm.content}
-              onChange={(e) => setReplyForm({ content: e.target.value })}
-              rows={6}
-            />
+            {/* Post Actions */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => handleToggleLike(post.id)}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  post.user_has_liked
+                    ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <ThumbsUp className="w-5 h-5" />
+                <span>Me gusta</span>
+              </button>
+              <Link href={`/forum/admin#post-${post.id}`} className="flex-1">
+                <button className="w-full flex items-center justify-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                  <MessageCircle className="w-5 h-5" />
+                  <span>Comentar</span>
+                </button>
+              </Link>
+              <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                <Share2 className="w-5 h-5" />
+                <span>Compartir</span>
+              </button>
+            </div>
+
+            {/* Comments Section */}
+            {post.replies_count > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <Link href={`/forum/admin#post-${post.id}`}>
+                  <button className="text-blue-600 hover:text-blue-700 text-sm">
+                    Ver todos los comentarios ({post.replies_count})
+                  </button>
+                </Link>
+              </div>
+            )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsReplyDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleCreateReply} disabled={isSubmitting || !replyForm.content}>
-              {isSubmitting ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Enviando...
-                </>
-              ) : (
-                'Enviar Respuesta'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        ))}
+      </div>
+
+      {/* Load More */}
+      {posts.length > 0 && (
+        <div className="mt-6 text-center">
+          <button 
+            onClick={fetchPosts}
+            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Cargar más publicaciones
+          </button>
+        </div>
+      )}
+
+      {posts.length === 0 && (
+        <div className="text-center py-12">
+          <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <p className="text-gray-600">No hay publicaciones aún</p>
+        </div>
+      )}
     </div>
   );
 }
