@@ -91,7 +91,7 @@ export default function PoliciesPage() {
       </div>
 
       {/* Area Filter */}
-      <div className="bg-card dark:bg-card rounded-lg border border-border p-4 mb-6">
+      <div className="bg-card rounded-lg border border-border p-4 mb-6">
         <div className="flex items-center gap-2 mb-4">
           <Building2 className="w-5 h-5 text-muted-foreground" />
           <span className="text-foreground">Filtrar por Área:</span>
@@ -102,7 +102,7 @@ export default function PoliciesPage() {
             className={`px-4 py-2 rounded-lg transition-colors ${
               selectedArea === 'all'
                 ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary dark:bg-secondary text-secondary-foreground hover:bg-accent dark:hover:bg-accent'
+                : 'bg-secondary text-secondary-foreground hover:bg-accent'
             }`}
           >
             Todas
@@ -114,7 +114,7 @@ export default function PoliciesPage() {
               className={`px-4 py-2 rounded-lg transition-colors ${
                 selectedArea === area
                   ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary dark:bg-secondary text-secondary-foreground hover:bg-accent dark:hover:bg-accent'
+                  : 'bg-secondary text-secondary-foreground hover:bg-accent'
               }`}
             >
               {originLabels[area] || area}
@@ -134,7 +134,7 @@ export default function PoliciesPage() {
           {policies.map((policy) => (
             <div
               key={policy.id}
-              className="bg-card dark:bg-card rounded-lg border border-border p-6 hover:shadow-lg transition-shadow"
+              className="bg-card rounded-lg border border-border p-6 hover:shadow-lg transition-shadow"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-start gap-4 flex-1">
@@ -164,7 +164,7 @@ export default function PoliciesPage() {
                     Descargar
                   </button>
                   <button 
-                    className="px-4 py-2 border border-border text-foreground rounded-lg hover:bg-accent dark:hover:bg-accent transition-colors"
+                    className="px-4 py-2 border border-border text-foreground rounded-lg hover:bg-accent transition-colors"
                     onClick={() => {
                       alert(`Ver detalles: ${policy.title}`);
                     }}

@@ -84,7 +84,7 @@ export default function InternalVacanciesPage() {
       </div>
 
       {/* Department Filter */}
-      <div className="bg-card dark:bg-card rounded-lg border border-border p-4 mb-6">
+      <div className="bg-card rounded-lg border border-border p-4 mb-6">
         <div className="flex items-center gap-2 mb-4">
           <Building2 className="w-5 h-5 text-muted-foreground" />
           <span className="text-foreground">Filtrar por Departamento:</span>
@@ -95,7 +95,7 @@ export default function InternalVacanciesPage() {
             className={`px-4 py-2 rounded-lg transition-colors ${
               selectedDepartment === 'all'
                 ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary dark:bg-secondary text-secondary-foreground hover:bg-accent dark:hover:bg-accent'
+                : 'bg-secondary text-secondary-foreground hover:bg-accent'
             }`}
           >
             Todos
@@ -107,7 +107,7 @@ export default function InternalVacanciesPage() {
               className={`px-4 py-2 rounded-lg transition-colors ${
                 selectedDepartment === dept.id.toString()
                   ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary dark:bg-secondary text-secondary-foreground hover:bg-accent dark:hover:bg-accent'
+                  : 'bg-secondary text-secondary-foreground hover:bg-accent'
               }`}
             >
               {dept.name}
@@ -127,7 +127,7 @@ export default function InternalVacanciesPage() {
           {vacancies.map((vacancy) => (
             <div
               key={vacancy.id}
-              className="bg-card dark:bg-card rounded-lg border border-border p-6 hover:shadow-lg transition-shadow"
+              className="bg-card rounded-lg border border-border p-6 hover:shadow-lg transition-shadow"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-start gap-4 flex-1">

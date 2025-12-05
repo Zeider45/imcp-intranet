@@ -99,7 +99,7 @@ export default function LibraryDocumentsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-card dark:bg-card rounded-lg border border-border p-4 mb-6">
+      <div className="bg-card rounded-lg border border-border p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="w-5 h-5 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" />
@@ -108,7 +108,7 @@ export default function LibraryDocumentsPage() {
               placeholder="Buscar documentos..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-input bg-background dark:bg-input/30 text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full pl-10 pr-4 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -116,7 +116,7 @@ export default function LibraryDocumentsPage() {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-4 py-2 border border-input bg-background dark:bg-input/30 text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+              className="px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="all">Todos</option>
               {categories.slice(1).map((category) => (
@@ -140,7 +140,7 @@ export default function LibraryDocumentsPage() {
           {documents.map((doc) => (
             <div
               key={doc.id}
-              className="bg-card dark:bg-card rounded-lg border border-border p-6 hover:shadow-lg transition-shadow"
+              className="bg-card rounded-lg border border-border p-6 hover:shadow-lg transition-shadow"
             >
               <div className="flex items-start gap-4 mb-4">
                 <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">

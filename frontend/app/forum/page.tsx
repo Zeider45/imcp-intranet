@@ -74,13 +74,13 @@ export default function ForumPage() {
       </div>
 
       {/* Create Post Card */}
-      <div className="bg-card dark:bg-card rounded-lg border border-border p-4 mb-6">
+      <div className="bg-card rounded-lg border border-border p-4 mb-6">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white flex-shrink-0 text-xs font-bold">
             US
           </div>
           <Link href="/forum/admin" className="flex-1">
-            <div className="px-4 py-2 bg-muted dark:bg-muted text-muted-foreground rounded-full text-left hover:bg-accent dark:hover:bg-accent transition-colors cursor-pointer">
+            <div className="px-4 py-2 bg-muted text-muted-foreground rounded-full text-left hover:bg-accent transition-colors cursor-pointer">
               Comparte una actualización con el equipo...
             </div>
           </Link>
@@ -96,7 +96,7 @@ export default function ForumPage() {
       {/* Posts Feed */}
       <div className="space-y-6">
         {posts.map((post) => (
-          <div key={post.id} className="bg-card dark:bg-card rounded-lg border border-border p-6">
+          <div key={post.id} className="bg-card rounded-lg border border-border p-6">
             {/* Post Header */}
             <div className="flex items-start gap-4 mb-4">
               <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getRandomGradient(post.id)} flex items-center justify-center text-white flex-shrink-0 text-xs font-bold`}>
@@ -138,20 +138,20 @@ export default function ForumPage() {
                 onClick={() => handleToggleLike(post.id)}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                   post.user_has_liked
-                    ? 'text-primary bg-primary/10 dark:bg-primary/20 hover:bg-primary/20 dark:hover:bg-primary/30'
-                    : 'text-foreground hover:bg-accent dark:hover:bg-accent'
+                    ? 'text-primary bg-primary/10 hover:bg-primary/20'
+                    : 'text-foreground hover:bg-accent'
                 }`}
               >
                 <ThumbsUp className="w-5 h-5" />
                 <span>Me gusta</span>
               </button>
               <Link href={`/forum/admin#post-${post.id}`} className="flex-1">
-                <button className="w-full flex items-center justify-center gap-2 px-4 py-2 text-foreground hover:bg-accent dark:hover:bg-accent rounded-lg transition-colors">
+                <button className="w-full flex items-center justify-center gap-2 px-4 py-2 text-foreground hover:bg-accent rounded-lg transition-colors">
                   <MessageCircle className="w-5 h-5" />
                   <span>Comentar</span>
                 </button>
               </Link>
-              <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-foreground hover:bg-accent dark:hover:bg-accent rounded-lg transition-colors">
+              <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-foreground hover:bg-accent rounded-lg transition-colors">
                 <Share2 className="w-5 h-5" />
                 <span>Compartir</span>
               </button>
@@ -176,7 +176,7 @@ export default function ForumPage() {
         <div className="mt-6 text-center">
           <button 
             onClick={fetchPosts}
-            className="px-6 py-2 border border-border text-foreground rounded-lg hover:bg-accent dark:hover:bg-accent transition-colors"
+            className="px-6 py-2 border border-border text-foreground rounded-lg hover:bg-accent transition-colors"
           >
             Cargar más publicaciones
           </button>
