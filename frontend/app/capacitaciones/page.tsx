@@ -1,7 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Clock, MapPin, Users, CheckCircle, Plus, Search } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Clock, MapPin, Users, CheckCircle, Plus, Search, GraduationCap } from 'lucide-react';
 import { trainingSessionApi, trainingAttendanceApi } from '@/lib/api';
 import type { TrainingSession, TrainingAttendance } from '@/lib/api/types';
 
@@ -10,34 +14,39 @@ interface CapacitacionWithAttendance {
   attendance?: TrainingAttendance;
 }
 
+interface EmployeeByDepartment {
+  id: number;
+  name: string;
+  department: string;
+  email: string;
+  assigned: boolean;
+}
+
 export default function CapacitacionesPage() {
-  const [activeTab, setActiveTab] = useState<'asignadas' | 'asistidas' | 'calendario'>('asignadas');
-  const [showAssignForm, setShowAssignForm] = useState(false);
+  const [activeTab, setActiveTab] = useState<'pendientes' | 'completadas'>('pendientes');
   const [loading, setLoading] = useState(true);
-  const [asignadas, setAsignadas] = useState<CapacitacionWithAttendance[]>([]);
-  const [asistidas, setAsistidas] = useState<CapacitacionWithAttendance[]>([]);
+  const [pendientes, setPendientes] = useState<CapacitacionWithAttendance[]>([]);
+  const [completadas, setCompletadas] = useState<CapacitacionWithAttendance[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  
   // TODO: Replace with actual auth context check for admin role
-  // Example: const { user } = useAuth(); const isAdmin = user?.role === 'admin';
-  const isAdmin = false; // Disabled until auth integration is complete
+  const isAdmin = false; // Set to true for admin view
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch my invitations/attendances
         const attendancesResponse = await trainingAttendanceApi.myInvitations();
         
         if (attendancesResponse.data) {
           const attendances = attendancesResponse.data;
           
-          // Fetch sessions for each attendance
           const sessionPromises = attendances.map(attendance => 
             trainingSessionApi.get(attendance.session)
           );
           
           const sessionsResponses = await Promise.all(sessionPromises);
           
-          // Combine sessions with attendance data, filtering out null responses
           const combinedData = sessionsResponses
             .map((response, index) => {
               if (!response.data) return null;
@@ -48,19 +57,18 @@ export default function CapacitacionesPage() {
             })
             .filter((item): item is CapacitacionWithAttendance => item !== null);
           
-          // Split into assigned (upcoming) and attended (completed)
-          const assigned = combinedData.filter(
+          const pending = combinedData.filter(
             item => item.session.status !== 'completed' && 
                    item.attendance?.confirmation_status !== 'declined'
           );
           
-          const attended = combinedData.filter(
+          const completed = combinedData.filter(
             item => item.session.status === 'completed' ||
                    item.attendance?.attendance_status === 'present'
           );
           
-          setAsignadas(assigned);
-          setAsistidas(attended);
+          setPendientes(pending);
+          setCompletadas(completed);
         }
       } catch (error) {
         console.error('Error fetching training data:', error);
@@ -72,422 +80,285 @@ export default function CapacitacionesPage() {
     fetchData();
   }, []);
 
-  const formatDateTime = (dateString: string) => {
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleString('es-ES', {
+    return date.toLocaleDateString('es-ES', {
       year: 'numeric',
-      month: 'short',
+      month: 'long',
       day: 'numeric',
+    });
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('es-ES', {
       hour: '2-digit',
       minute: '2-digit',
     });
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
+  // Admin View - Employee Management by Department
+  if (isAdmin) {
+    // Mock data for employees grouped by department
+    const employeesByDept: { [key: string]: EmployeeByDepartment[] } = {
+      'Tecnología': [
+        { id: 1, name: 'Juan Pérez', department: 'Tecnología', email: 'juan@imcp.com', assigned: true },
+        { id: 2, name: 'María García', department: 'Tecnología', email: 'maria@imcp.com', assigned: false },
+      ],
+      'Recursos Humanos': [
+        { id: 3, name: 'Carlos López', department: 'Recursos Humanos', email: 'carlos@imcp.com', assigned: true },
+        { id: 4, name: 'Ana Martínez', department: 'Recursos Humanos', email: 'ana@imcp.com', assigned: false },
+      ],
+      'Administración': [
+        { id: 5, name: 'Roberto Silva', department: 'Administración', email: 'roberto@imcp.com', assigned: false },
+        { id: 6, name: 'Laura Fernández', department: 'Administración', email: 'laura@imcp.com', assigned: true },
+      ],
+    };
 
-  if (isAdmin && showAssignForm) {
     return (
-      <div className="p-8">
-        <div className="mb-6">
-          <button
-            onClick={() => setShowAssignForm(false)}
-            className="text-blue-600 hover:text-blue-700 mb-4"
-          >
-            ← Volver
-          </button>
-          <h1 className="text-3xl font-bold text-gray-900">Asignar Capacitación</h1>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">
+              Gestión de Capacitaciones
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Administra las capacitaciones y asignaciones de empleados
+            </p>
+          </div>
+          <Button className="gap-2">
+            <Plus className="h-4 w-4" />
+            Nueva Capacitación
+          </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Create Training Form */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Nueva Capacitación</h2>
-            <form className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Título</label>
-                <input
-                  type="text"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Nombre de la capacitación"
-                />
-              </div>
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Buscar empleados..."
+            className="pl-9"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Instructor</label>
-                <input
-                  type="text"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Nombre del instructor"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
-                  <input
-                    type="date"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+        {/* Employees by Department */}
+        <div className="space-y-4">
+          {Object.entries(employeesByDept).map(([department, employees]) => (
+            <Card key={department}>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>{department}</span>
+                  <Badge variant="secondary">{employees.length} empleados</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {employees
+                    .filter(emp => 
+                      emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      emp.email.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((employee) => (
+                      <div
+                        key={employee.id}
+                        className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-accent transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
+                            {employee.name.split(' ').map(n => n[0]).join('')}
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground">{employee.name}</p>
+                            <p className="text-sm text-muted-foreground">{employee.email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {employee.assigned && (
+                            <Badge variant="outline" className="gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              Asignado
+                            </Badge>
+                          )}
+                          <Button size="sm" variant={employee.assigned ? "outline" : "default"}>
+                            {employee.assigned ? 'Gestionar' : 'Asignar'}
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Hora</label>
-                  <input
-                    type="time"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Ubicación</label>
-                <input
-                  type="text"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Lugar de la capacitación"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Cupo Máximo</label>
-                <input
-                  type="number"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Número de participantes"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
-                <textarea
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Detalles de la capacitación"
-                />
-              </div>
-            </form>
-          </div>
-
-          {/* Assign to Employees */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Asignar Empleados</h2>
-            
-            <div className="mb-4">
-              <div className="relative">
-                <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Buscar empleados..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2 mb-4 max-h-96 overflow-y-auto">
-              {/* TODO: Replace with dynamic employee list from API */}
-              {[
-                'Juan Pérez - Operaciones',
-                'María González - Atención al Cliente',
-                'Carlos Ramírez - Créditos',
-                'Ana Martínez - Recursos Humanos',
-                'Roberto Silva - Administración',
-                'Laura Fernández - Tecnología',
-                'Jorge López - Cumplimiento',
-                'Patricia Torres - Ventas',
-              ].map((employee, index) => (
-                <label key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
-                  <input type="checkbox" className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm text-gray-700">{employee}</span>
-                </label>
-              ))}
-            </div>
-
-            <div className="flex gap-3">
-              <button className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                Crear y Asignar
-              </button>
-              <button
-                onClick={() => setShowAssignForm(false)}
-                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     );
   }
 
+  // Client View - Pending and Completed Courses
   return (
-    <div className="p-8">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Capacitaciones</h1>
-          <p className="text-gray-600">
-            {isAdmin ? 'Gestión de capacitaciones y asignación' : 'Tus capacitaciones asignadas y completadas'}
-          </p>
-        </div>
-        {isAdmin && (
-          <button
-            onClick={() => setShowAssignForm(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Asignar Capacitación
-          </button>
-        )}
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">
+          Mis Capacitaciones
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          Revisa tus cursos pendientes y completados
+        </p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-gray-200">
+      <div className="flex gap-2 border-b border-border">
         <button
-          onClick={() => setActiveTab('asignadas')}
-          className={`px-4 py-2 transition-colors relative ${
-            activeTab === 'asignadas'
-              ? 'text-blue-600'
-              : 'text-gray-600 hover:text-gray-900'
+          onClick={() => setActiveTab('pendientes')}
+          className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+            activeTab === 'pendientes'
+              ? 'text-primary'
+              : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          Asignadas ({asignadas.length})
-          {activeTab === 'asignadas' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
+          Cursos Pendientes ({pendientes.length})
+          {activeTab === 'pendientes' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
           )}
         </button>
         <button
-          onClick={() => setActiveTab('asistidas')}
-          className={`px-4 py-2 transition-colors relative ${
-            activeTab === 'asistidas'
-              ? 'text-blue-600'
-              : 'text-gray-600 hover:text-gray-900'
+          onClick={() => setActiveTab('completadas')}
+          className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+            activeTab === 'completadas'
+              ? 'text-primary'
+              : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          Asistidas ({asistidas.length})
-          {activeTab === 'asistidas' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('calendario')}
-          className={`px-4 py-2 transition-colors relative ${
-            activeTab === 'calendario'
-              ? 'text-blue-600'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Calendario
-          {activeTab === 'calendario' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
+          Cursos Completados ({completadas.length})
+          {activeTab === 'completadas' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
           )}
         </button>
       </div>
 
       {/* Content */}
-      {activeTab === 'asignadas' && (
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent" />
+            <p className="mt-4 text-muted-foreground">Cargando capacitaciones...</p>
+          </div>
+        </div>
+      ) : (
         <>
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
-                <p className="mt-4 text-gray-600">Cargando...</p>
-              </div>
-            </div>
-          ) : asignadas.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600">No tienes capacitaciones asignadas en este momento.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {asignadas.map(({ session, attendance }) => (
-                <div
-                  key={session.id}
-                  className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 flex-1">{session.title}</h3>
-                    <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-medium">
-                      {attendance?.confirmation_status === 'confirmed' ? 'Confirmada' : 'Próxima'}
-                    </span>
+          {activeTab === 'pendientes' && (
+            pendientes.length === 0 ? (
+              <Card>
+                <CardContent className="py-12">
+                  <div className="text-center">
+                    <GraduationCap className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <p className="mt-4 text-muted-foreground">
+                      No tienes cursos pendientes en este momento.
+                    </p>
                   </div>
-                  
-                  <div className="space-y-3 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <CalendarIcon className="w-4 h-4" />
-                      <span>{formatDate(session.start_datetime)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Clock className="w-4 h-4" />
-                      <span>{formatDateTime(session.start_datetime)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <MapPin className="w-4 h-4" />
-                      <span>{session.location}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Users className="w-4 h-4" />
-                      <span>{session.confirmed_count} / {session.max_participants || 'Sin límite'} confirmados</span>
-                    </div>
-                  </div>
-
-                  <p className="text-sm text-gray-600 mb-4">Instructor: {session.instructor_name}</p>
-
-                  <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    Ver Detalles
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {activeTab === 'asistidas' && (
-        <>
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
-                <p className="mt-4 text-gray-600">Cargando...</p>
-              </div>
-            </div>
-          ) : asistidas.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600">No has asistido a ninguna capacitación aún.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {asistidas.map(({ session, attendance }) => (
-                <div
-                  key={session.id}
-                  className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 flex-1">{session.title}</h3>
-                    <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
-                  </div>
-                  
-                  <div className="space-y-3 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <CalendarIcon className="w-4 h-4" />
-                      <span>{formatDate(session.start_datetime)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <MapPin className="w-4 h-4" />
-                      <span>{session.location}</span>
-                    </div>
-                  </div>
-
-                  <p className="text-sm text-gray-600 mb-4">Instructor: {session.instructor_name}</p>
-
-                  {attendance?.evaluation_score && (
-                    <div className="mb-4">
-                      <div className="flex justify-between text-sm text-gray-600 mb-2">
-                        <span>Calificación</span>
-                        <span>{attendance.evaluation_score}/100</span>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {pendientes.map(({ session, attendance }) => (
+                  <Card key={session.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <CardTitle className="text-lg">{session.title}</CardTitle>
+                        <Badge variant={attendance?.confirmation_status === 'confirmed' ? 'default' : 'secondary'}>
+                          {attendance?.confirmation_status === 'confirmed' ? 'Confirmado' : 'Pendiente'}
+                        </Badge>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-green-600 h-2 rounded-full transition-all"
-                          style={{ width: `${attendance.evaluation_score}%` }}
-                        />
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          <span>{formatDate(session.start_datetime)}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Clock className="h-4 w-4" />
+                          <span>{formatTime(session.start_datetime)}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="h-4 w-4" />
+                          <span>{session.location}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Users className="h-4 w-4" />
+                          <span>Instructor: {session.instructor_name}</span>
+                        </div>
                       </div>
-                    </div>
-                  )}
-
-                  <button 
-                    className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                    disabled={!attendance?.certificate_issued}
-                  >
-                    {attendance?.certificate_issued ? 'Ver Certificado' : 'Certificado no disponible'}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {activeTab === 'calendario' && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent" />
-                <p className="mt-4 text-gray-600">Cargando...</p>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-7 gap-2 mb-4">
-                {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day) => (
-                  <div key={day} className="text-center text-sm font-medium text-gray-600 py-2">
-                    {day}
-                  </div>
+                      <Button className="w-full">Ver Detalles</Button>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
-              <div className="grid grid-cols-7 gap-2">
-                {(() => {
-                  const now = new Date();
-                  const year = now.getFullYear();
-                  const month = now.getMonth();
-                  const firstDay = new Date(year, month, 1).getDay();
-                  const daysInMonth = new Date(year, month + 1, 0).getDate();
-                  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
-                  
-                  return Array.from({ length: totalCells }, (_, i) => {
-                    const dayNumber = i - firstDay + 1;
-                    const isValidDay = dayNumber > 0 && dayNumber <= daysInMonth;
-                    
-                    // Check if any training is on this day
-                    const hasEvent = isValidDay && asignadas.some(({ session }) => {
-                      const sessionDate = new Date(session.start_datetime);
-                      return sessionDate.getDate() === dayNumber && 
-                             sessionDate.getMonth() === month &&
-                             sessionDate.getFullYear() === year;
-                    });
-                    
-                    return (
-                      <div
-                        key={i}
-                        className={`aspect-square flex items-center justify-center rounded-lg text-sm ${
-                          isValidDay
-                            ? hasEvent
-                              ? 'bg-blue-600 text-white cursor-pointer hover:bg-blue-700'
-                              : 'bg-gray-50 hover:bg-gray-100 cursor-pointer'
-                            : 'bg-transparent'
-                        }`}
-                      >
-                        {isValidDay && dayNumber}
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-              <div className="mt-6 space-y-3">
-                <p className="text-sm font-medium text-gray-700">Próximos eventos:</p>
-                {asignadas.length === 0 ? (
-                  <p className="text-sm text-gray-600">No hay eventos próximos programados.</p>
-                ) : (
-                  asignadas.slice(0, 3).map(({ session }) => (
-                    <div key={session.id} className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{session.title}</p>
-                        <p className="text-xs text-gray-600">{formatDateTime(session.start_datetime)}</p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </>
+            )
           )}
-        </div>
+
+          {activeTab === 'completadas' && (
+            completadas.length === 0 ? (
+              <Card>
+                <CardContent className="py-12">
+                  <div className="text-center">
+                    <CheckCircle className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <p className="mt-4 text-muted-foreground">
+                      No has completado ningún curso aún.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {completadas.map(({ session, attendance }) => (
+                  <Card key={session.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <CardTitle className="text-lg">{session.title}</CardTitle>
+                        <CheckCircle className="h-6 w-6 text-chart-3" />
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          <span>{formatDate(session.start_datetime)}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="h-4 w-4" />
+                          <span>{session.location}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Users className="h-4 w-4" />
+                          <span>Instructor: {session.instructor_name}</span>
+                        </div>
+                      </div>
+                      {attendance?.evaluation_score && (
+                        <div>
+                          <div className="flex justify-between text-sm mb-2">
+                            <span className="text-muted-foreground">Calificación</span>
+                            <span className="font-semibold text-foreground">{attendance.evaluation_score}/100</span>
+                          </div>
+                          <div className="w-full bg-secondary rounded-full h-2">
+                            <div
+                              className="bg-chart-3 h-2 rounded-full transition-all"
+                              style={{ width: `${attendance.evaluation_score}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      <Button variant="outline" className="w-full">Ver Certificado</Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )
+          )}
+        </>
       )}
     </div>
   );
