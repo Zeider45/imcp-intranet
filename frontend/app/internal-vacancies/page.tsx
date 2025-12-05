@@ -179,7 +179,7 @@ export default function InternalVacanciesPage() {
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-2 text-gray-600">
                       <Users className="w-4 h-4" />
-                      <span>{vacancy.applications_count || 0} aplicantes</span>
+                      <span>{vacancy.application_count || 0} aplicantes</span>
                     </div>
                   </div>
                 </div>
