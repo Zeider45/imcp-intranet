@@ -85,6 +85,9 @@ export default function CapacitacionesPage() {
   const [pendientes, setPendientes] = useState<CapacitacionWithAttendance[]>([]);
   const [completadas, setCompletadas] = useState<CapacitacionWithAttendance[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDeclineDialogOpen, setIsDeclineDialogOpen] = useState(false);
+  const [declineReason, setDeclineReason] = useState('');
+  const [selectedAttendanceToDecline, setSelectedAttendanceToDecline] = useState<number | null>(null);
   
   // Admin view state
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
@@ -93,8 +96,11 @@ export default function CapacitacionesPage() {
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [isCreateSessionDialogOpen, setIsCreateSessionDialogOpen] = useState(false);
+  const [isAssignSingleUserDialogOpen, setIsAssignSingleUserDialogOpen] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [selectedSingleUser, setSelectedSingleUser] = useState<UserWithGroups | null>(null);
   const [selectedSession, setSelectedSession] = useState<TrainingSession | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<number>(0);
   
   // Form state for creating sessions
   const [sessionForm, setSessionForm] = useState({
@@ -269,13 +275,24 @@ export default function CapacitacionesPage() {
     }
   };
 
-  const handleDeclineAttendance = async (attendanceId: number, reason: string) => {
+  const handleDeclineAttendance = async () => {
+    if (!selectedAttendanceToDecline || !declineReason.trim()) return;
+    
     try {
-      await trainingAttendanceApi.declineAttendance(attendanceId, reason);
+      await trainingAttendanceApi.declineAttendance(selectedAttendanceToDecline, declineReason);
+      setIsDeclineDialogOpen(false);
+      setDeclineReason('');
+      setSelectedAttendanceToDecline(null);
       fetchUserTrainings();
     } catch (error) {
       console.error('Error declining attendance:', error);
     }
+  };
+
+  const openDeclineDialog = (attendanceId: number) => {
+    setSelectedAttendanceToDecline(attendanceId);
+    setDeclineReason('');
+    setIsDeclineDialogOpen(true);
   };
 
   const handleCreateSession = async () => {
@@ -339,6 +356,30 @@ export default function CapacitacionesPage() {
     setSelectedSession(session);
     setSelectedUsers([]);
     setIsAssignDialogOpen(true);
+  };
+
+  const openAssignSingleUserDialog = (user: UserWithGroups) => {
+    setSelectedSingleUser(user);
+    setSelectedSessionId(0);
+    setIsAssignSingleUserDialogOpen(true);
+  };
+
+  const handleAssignSingleUser = async () => {
+    if (!selectedSingleUser || !selectedSessionId) return;
+
+    try {
+      await trainingAttendanceApi.create({
+        session: selectedSessionId,
+        analyst: selectedSingleUser.id,
+        confirmation_status: 'pending',
+      });
+      setIsAssignSingleUserDialogOpen(false);
+      setSelectedSingleUser(null);
+      setSelectedSessionId(0);
+      fetchAdminData();
+    } catch (error) {
+      console.error('Error assigning user to session:', error);
+    }
   };
 
   // Get filtered users based on selected group
@@ -453,10 +494,7 @@ export default function CapacitacionesPage() {
                           size="sm" 
                           variant="outline" 
                           className="flex-1"
-                          onClick={() => {
-                            const reason = prompt('¿Por qué no puedes asistir?');
-                            if (reason) handleDeclineAttendance(attendance.id, reason);
-                          }}
+                          onClick={() => openDeclineDialog(attendance.id)}
                         >
                           <XCircle className="h-4 w-4 mr-1" />
                           Declinar
@@ -592,6 +630,38 @@ export default function CapacitacionesPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Decline Attendance Dialog */}
+      <Dialog open={isDeclineDialogOpen} onOpenChange={setIsDeclineDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Declinar Asistencia</DialogTitle>
+            <DialogDescription>
+              Por favor, indica el motivo por el cual no puedes asistir a esta capacitación.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Textarea
+              placeholder="Escribe el motivo de tu ausencia..."
+              value={declineReason}
+              onChange={(e) => setDeclineReason(e.target.value)}
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeclineDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleDeclineAttendance}
+              disabled={!declineReason.trim()}
+              variant="destructive"
+            >
+              Declinar Asistencia
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
@@ -705,11 +775,7 @@ export default function CapacitacionesPage() {
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => {
-                            // Open dialog to assign user to a session
-                            // For now, just log
-                            console.log('Assign training to user:', user.id);
-                          }}
+                          onClick={() => openAssignSingleUserDialog(user)}
                         >
                           <UserPlus className="h-4 w-4 mr-1" />
                           Asignar
@@ -1013,6 +1079,56 @@ export default function CapacitacionesPage() {
             </Button>
             <Button onClick={handleAssignUsers} disabled={selectedUsers.length === 0}>
               Asignar {selectedUsers.length} Usuario(s)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Single User to Session Dialog */}
+      <Dialog open={isAssignSingleUserDialogOpen} onOpenChange={setIsAssignSingleUserDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Asignar Capacitación</DialogTitle>
+            <DialogDescription>
+              Asignar una sesión de capacitación a {selectedSingleUser?.full_name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Seleccionar Sesión</label>
+              <Select
+                value={selectedSessionId ? selectedSessionId.toString() : ''}
+                onValueChange={(v) => setSelectedSessionId(parseInt(v))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccione una sesión" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sessions
+                    .filter(s => s.status !== 'completed' && s.status !== 'cancelled')
+                    .map((session) => (
+                      <SelectItem key={session.id} value={session.id.toString()}>
+                        <div className="flex flex-col">
+                          <span>{session.title}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDateTime(session.start_datetime)} - {session.location}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAssignSingleUserDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleAssignSingleUser} 
+              disabled={!selectedSessionId}
+            >
+              Asignar Sesión
             </Button>
           </DialogFooter>
         </DialogContent>
