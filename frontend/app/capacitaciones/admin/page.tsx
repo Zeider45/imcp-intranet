@@ -106,8 +106,8 @@ export default function CapacitacionesAdminPage() {
         setPlans((plansResponse.data as PaginatedResponse<TrainingPlan>).results || []);
       }
 
+      // TODO: Replace with real API call to fetch users grouped by department/group
       // Fetch users (mock data for now - would need a users API endpoint)
-      // In a real implementation, this would call an API to get users grouped by department/group
       fetchMockUsers();
     } catch (error) {
       console.error('Error fetching admin data:', error);
@@ -117,14 +117,15 @@ export default function CapacitacionesAdminPage() {
   }, []);
 
   // Mock function to fetch users - replace with real API call
+  // TODO: Replace with real API endpoint when available
   const fetchMockUsers = () => {
     const mockUsers: UserWithGroups[] = [
-      { id: 1, username: 'jperez', first_name: 'Juan', last_name: 'Pérez', full_name: 'Juan Pérez', email: 'juan@imcp.com', groups: ['Tecnología', 'Analistas'], is_active: true },
-      { id: 2, username: 'mgarcia', first_name: 'María', last_name: 'García', full_name: 'María García', email: 'maria@imcp.com', groups: ['Tecnología'], is_active: true },
-      { id: 3, username: 'clopez', first_name: 'Carlos', last_name: 'López', full_name: 'Carlos López', email: 'carlos@imcp.com', groups: ['Recursos Humanos'], is_active: true },
-      { id: 4, username: 'amartinez', first_name: 'Ana', last_name: 'Martínez', full_name: 'Ana Martínez', email: 'ana@imcp.com', groups: ['Recursos Humanos', 'Gerentes'], is_active: true },
-      { id: 5, username: 'rsilva', first_name: 'Roberto', last_name: 'Silva', full_name: 'Roberto Silva', email: 'roberto@imcp.com', groups: ['Administración'], is_active: true },
-      { id: 6, username: 'lfernandez', first_name: 'Laura', last_name: 'Fernández', full_name: 'Laura Fernández', email: 'laura@imcp.com', groups: ['Administración', 'Analistas'], is_active: true },
+      { id: 1, username: 'jperez', first_name: 'Juan', last_name: 'Pérez', full_name: 'Juan Pérez', email: 'juan.perez@example.com', groups: ['Tecnología', 'Analistas'], is_active: true },
+      { id: 2, username: 'mgarcia', first_name: 'María', last_name: 'García', full_name: 'María García', email: 'maria.garcia@example.com', groups: ['Tecnología'], is_active: true },
+      { id: 3, username: 'clopez', first_name: 'Carlos', last_name: 'López', full_name: 'Carlos López', email: 'carlos.lopez@example.com', groups: ['Recursos Humanos'], is_active: true },
+      { id: 4, username: 'amartinez', first_name: 'Ana', last_name: 'Martínez', full_name: 'Ana Martínez', email: 'ana.martinez@example.com', groups: ['Recursos Humanos', 'Gerentes'], is_active: true },
+      { id: 5, username: 'rsilva', first_name: 'Roberto', last_name: 'Silva', full_name: 'Roberto Silva', email: 'roberto.silva@example.com', groups: ['Administración'], is_active: true },
+      { id: 6, username: 'lfernandez', first_name: 'Laura', last_name: 'Fernández', full_name: 'Laura Fernández', email: 'laura.fernandez@example.com', groups: ['Administración', 'Analistas'], is_active: true },
     ];
 
     const grouped: GroupedUsers = {};
