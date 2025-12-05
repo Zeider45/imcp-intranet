@@ -22,6 +22,23 @@ interface EmployeeByDepartment {
   assigned: boolean;
 }
 
+// TODO: Replace with actual API call to fetch employees
+// This mock data is for development/demonstration purposes only
+const MOCK_EMPLOYEES_BY_DEPT: { [key: string]: EmployeeByDepartment[] } = {
+  'Tecnología': [
+    { id: 1, name: 'Juan Pérez', department: 'Tecnología', email: 'juan@imcp.com', assigned: true },
+    { id: 2, name: 'María García', department: 'Tecnología', email: 'maria@imcp.com', assigned: false },
+  ],
+  'Recursos Humanos': [
+    { id: 3, name: 'Carlos López', department: 'Recursos Humanos', email: 'carlos@imcp.com', assigned: true },
+    { id: 4, name: 'Ana Martínez', department: 'Recursos Humanos', email: 'ana@imcp.com', assigned: false },
+  ],
+  'Administración': [
+    { id: 5, name: 'Roberto Silva', department: 'Administración', email: 'roberto@imcp.com', assigned: false },
+    { id: 6, name: 'Laura Fernández', department: 'Administración', email: 'laura@imcp.com', assigned: true },
+  ],
+};
+
 export default function CapacitacionesPage() {
   const [activeTab, setActiveTab] = useState<'pendientes' | 'completadas'>('pendientes');
   const [loading, setLoading] = useState(true);
@@ -30,7 +47,9 @@ export default function CapacitacionesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   
   // TODO: Replace with actual auth context check for admin role
-  const isAdmin = false; // Set to true for admin view
+  // Example: const { user } = useAuth(); const isAdmin = user?.role === 'admin';
+  // DEVELOPMENT ONLY: Set to false for client view, true for admin view during development
+  const isAdmin = false;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -99,22 +118,6 @@ export default function CapacitacionesPage() {
 
   // Admin View - Employee Management by Department
   if (isAdmin) {
-    // Mock data for employees grouped by department
-    const employeesByDept: { [key: string]: EmployeeByDepartment[] } = {
-      'Tecnología': [
-        { id: 1, name: 'Juan Pérez', department: 'Tecnología', email: 'juan@imcp.com', assigned: true },
-        { id: 2, name: 'María García', department: 'Tecnología', email: 'maria@imcp.com', assigned: false },
-      ],
-      'Recursos Humanos': [
-        { id: 3, name: 'Carlos López', department: 'Recursos Humanos', email: 'carlos@imcp.com', assigned: true },
-        { id: 4, name: 'Ana Martínez', department: 'Recursos Humanos', email: 'ana@imcp.com', assigned: false },
-      ],
-      'Administración': [
-        { id: 5, name: 'Roberto Silva', department: 'Administración', email: 'roberto@imcp.com', assigned: false },
-        { id: 6, name: 'Laura Fernández', department: 'Administración', email: 'laura@imcp.com', assigned: true },
-      ],
-    };
-
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -146,7 +149,7 @@ export default function CapacitacionesPage() {
 
         {/* Employees by Department */}
         <div className="space-y-4">
-          {Object.entries(employeesByDept).map(([department, employees]) => (
+          {Object.entries(MOCK_EMPLOYEES_BY_DEPT).map(([department, employees]) => (
             <Card key={department}>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
