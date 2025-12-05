@@ -1,26 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { 
-  Library, 
   Search, 
   Filter,
   FileText, 
   Download,
   Eye,
-  Settings,
 } from 'lucide-react';
 import { libraryDocumentApi } from '@/lib/api';
 import type { LibraryDocument, PaginatedResponse } from '@/lib/api/types';
@@ -98,53 +84,40 @@ export default function LibraryDocumentsPage() {
   return (
     <div className="p-8">
       <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Biblioteca de Documentos</h1>
-            <p className="text-gray-600">Accede a manuales y documentación oficial</p>
-          </div>
-          <Link href="/library-documents/admin">
-            <Button variant="outline" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              Administrar
-            </Button>
-          </Link>
-        </div>
+        <h1 className="text-gray-900 mb-2">Biblioteca de Documentos</h1>
+        <p className="text-gray-600">Accede a manuales y documentación oficial</p>
       </div>
 
       {/* Filters */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-              <Input
-                type="text"
-                placeholder="Buscar documentos..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Filter className="w-5 h-5 text-gray-600" />
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-full md:w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {categories.slice(1).map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {documentTypeLabels[category] || category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Buscar documentos..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex items-center gap-2">
+            <Filter className="w-5 h-5 text-gray-600" />
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">Todos</option>
+              {categories.slice(1).map((category) => (
+                <option key={category} value={category}>
+                  {documentTypeLabels[category] || category}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
 
       {/* Documents Grid */}
       {documents.length === 0 ? (
@@ -155,55 +128,51 @@ export default function LibraryDocumentsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {documents.map((doc) => (
-            <Card
+            <div
               key={doc.id}
-              className="hover:shadow-lg transition-shadow"
+              className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow"
             >
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4 mb-4">
-                  <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-gray-900 mb-1 truncate">{doc.title}</h3>
-                    <p className="text-xs text-gray-600">
-                      {documentTypeLabels[doc.document_type] || doc.document_type}
-                    </p>
-                  </div>
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-6 h-6 text-blue-600" />
                 </div>
-                <div className="space-y-2 mb-4">
-                  <div className="flex justify-between text-xs text-gray-600">
-                    <span>Fecha:</span>
-                    <span>{new Date(doc.created_at).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-600">
-                    <span>Versión:</span>
-                    <span>{doc.version}</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-600">
-                    <span>Descargas:</span>
-                    <span>{doc.download_count || 0}</span>
-                  </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-gray-900 mb-1">{doc.title}</h3>
+                  <p className="text-gray-600">
+                    {documentTypeLabels[doc.document_type] || doc.document_type}
+                  </p>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                    onClick={() => handleDownload(doc)}
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Descargar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleView(doc)}
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Button>
+              </div>
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between text-gray-600">
+                  <span>Fecha:</span>
+                  <span>{new Date(doc.created_at).toLocaleDateString()}</span>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="flex justify-between text-gray-600">
+                  <span>Tamaño:</span>
+                  <span>{doc.version}</span>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>Descargas:</span>
+                  <span>{doc.download_count || 0}</span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                  onClick={() => handleDownload(doc)}
+                >
+                  <Download className="w-4 h-4" />
+                  Descargar
+                </button>
+                <button
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  onClick={() => handleView(doc)}
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       )}
