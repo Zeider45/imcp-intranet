@@ -4,6 +4,7 @@ from rest_framework import status, viewsets, filters
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User, Group
 from django_filters.rest_framework import DjangoFilterBackend
 import logging
 from .permissions import (
@@ -206,6 +207,28 @@ def current_user(request):
             {'authenticated': False},
             status=status.HTTP_200_OK
         )
+
+
+@api_view(['GET'])
+def active_employees_count(request):
+    """
+    Returns the count of active employees that belong to the
+    'GG_INTRANET_TODOS_USUARIOS' group. If the group doesn't exist,
+    the count will be 0.
+
+    Response shape: { "count": number }
+    """
+    group_name = 'GG_INTRANET_TODOS_USUARIOS'
+    try:
+        group = Group.objects.get(name=group_name)
+        count = User.objects.filter(is_active=True, groups=group).count()
+    except Group.DoesNotExist:
+        count = 0
+
+    return Response({
+        'count': count,
+        'group': group_name,
+    }, status=status.HTTP_200_OK)
 
 
 class DepartmentViewSet(viewsets.ModelViewSet):

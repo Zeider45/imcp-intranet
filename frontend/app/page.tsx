@@ -2,9 +2,23 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { QuickActionCard } from "@/components/dashboard/quick-action-card";
 import { RecentActivityItem } from "@/components/dashboard/recent-activity-item";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, FileText, Calendar, BookOpen, TrendingUp, Plus, Send, Clock } from 'lucide-react';
+import {
+  Users,
+  FileText,
+  Calendar,
+  BookOpen,
+  TrendingUp,
+  Plus,
+  Send,
+  Clock,
+} from "lucide-react";
+import { metricsApi } from "@/lib/api";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  // Fetch active employees count from backend
+  const { data, error } = await metricsApi.getActiveEmployeesCount();
+  const activeEmployees = data?.count ?? 0;
+
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
@@ -21,7 +35,7 @@ export default function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Empleados Activos"
-          value="234"
+          value={activeEmployees}
           icon={Users}
           trend={{ value: 12, isPositive: true }}
         />
@@ -131,7 +145,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex gap-4">
-                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-lg bg-primary/10 flex-shrink-0">
+                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-lg bg-primary/10 shrink-0">
                   <span className="text-xs font-semibold text-primary">
                     DIC
                   </span>
@@ -148,16 +162,14 @@ export default function DashboardPage() {
               </div>
 
               <div className="flex gap-4">
-                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-lg bg-chart-2/10 flex-shrink-0">
+                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-lg bg-chart-2/10 shrink-0">
                   <span className="text-xs font-semibold text-chart-2">
                     DIC
                   </span>
                   <span className="text-lg font-bold text-chart-2">18</span>
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-sm">
-                    Taller de Liderazgo
-                  </p>
+                  <p className="font-semibold text-sm">Taller de Liderazgo</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     2:00 PM - Virtual (Zoom)
                   </p>
@@ -165,7 +177,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="flex gap-4">
-                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-lg bg-chart-3/10 flex-shrink-0">
+                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-lg bg-chart-3/10 shrink-0">
                   <span className="text-xs font-semibold text-chart-3">
                     DIC
                   </span>
@@ -182,7 +194,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="flex gap-4">
-                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-lg bg-chart-4/10 flex-shrink-0">
+                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-lg bg-chart-4/10 shrink-0">
                   <span className="text-xs font-semibold text-chart-4">
                     DIC
                   </span>

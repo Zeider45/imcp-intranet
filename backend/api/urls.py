@@ -36,6 +36,8 @@ router.register(r'forum-posts', views.ForumPostViewSet, basename='forum-post')
 urlpatterns = [
     path('health/', views.health_check, name='health_check'),
     path('welcome/', views.welcome, name='welcome'),
+    # Metrics
+    path('metrics/active-employees/', views.active_employees_count, name='active_employees_count'),
     # Authentication endpoints
     path('auth/login/', views.ldap_login, name='ldap_login'),
     path('auth/logout/', views.ldap_logout, name='ldap_logout'),

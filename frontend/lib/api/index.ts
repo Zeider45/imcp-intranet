@@ -6,3 +6,5 @@ export * from "./health";
 export * from "./departments";
 // Business Process APIs - IMCP Use Cases
 export * from "./businessProcesses";
+// Metrics APIs
+export * from "./metrics";

@@ -4,8 +4,6 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from ldap3 import Server, Connection, ALL, NTLM, SUBTREE
 
-from api.models import UserProfile
-
 
 class Command(BaseCommand):
     help = 'Sync users from Active Directory into Django auth.User and api.UserProfile'
@@ -129,12 +127,8 @@ class Command(BaseCommand):
                         else:
                             skipped += 1
 
-                    # Ensure a UserProfile exists (signals also attempt this)
-                    try:
-                        UserProfile.objects.get_or_create(user=user)
-                    except Exception:
-                        # don't fail the entire run for profile issues
-                        self.stdout.write(self.style.WARNING(f'Could not create/update profile for {username}'))
+                    # Note: UserProfile model no longer exists in this project.
+                    # Keeping user creation/update only.
 
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f'Error processing user {username}: {e}'))
