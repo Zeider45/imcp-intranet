@@ -188,7 +188,7 @@ To check if your environment is properly set up, you can run:
 
 ```bash
 # Check Python version
-python --version
+python3 --version
 
 # Check if gcc is available
 gcc --version

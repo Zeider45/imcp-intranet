@@ -12,7 +12,6 @@ echo ""
 if [ -f /etc/os-release ]; then
     . /etc/os-release
     OS=$ID
-    VERSION=$VERSION_ID
 else
     echo "Error: Cannot detect operating system"
     exit 1
@@ -137,4 +136,3 @@ echo "7. Start development server:"
 echo "   python manage.py runserver"
 echo ""
 echo "For more information, see SETUP.md"
-echo ""
