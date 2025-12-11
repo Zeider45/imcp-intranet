@@ -36,45 +36,71 @@ imcp-intranet/
 ## 🛠️ Instalación y Configuración
 
 ### Prerequisitos
-- Python 3.12+
+- Python 3.10, 3.11, or 3.12 (recommended)
 - Node.js 20+
 - npm 10+
+- GCC compiler and system development libraries
 
 ### Backend (Django)
+
+> **⚠️ Important**: Before installing Python dependencies, you need to install system libraries.
+> See the detailed setup guide: [backend/SETUP.md](backend/SETUP.md)
+
+**Quick Setup (Ubuntu/Debian):**
+```bash
+cd backend
+# Install system dependencies (requires sudo)
+./setup_dependencies.sh
+```
+
+**Manual Setup:**
 
 1. Navegar al directorio del backend:
 ```bash
 cd backend
 ```
 
-2. Crear un entorno virtual (recomendado):
+2. Instalar dependencias del sistema (Ubuntu/Debian):
+```bash
+sudo apt-get update
+sudo apt-get install -y python3-dev build-essential gcc libldap2-dev libsasl2-dev libssl-dev libjpeg-dev zlib1g-dev
+```
+
+Para otros sistemas operativos, ver [backend/SETUP.md](backend/SETUP.md)
+
+3. Crear un entorno virtual (recomendado):
 ```bash
 python3 -m venv venv
 source venv/bin/activate  # En Windows: venv\Scripts\activate
 ```
 
-3. Instalar dependencias:
+4. Actualizar pip:
+```bash
+pip install --upgrade pip setuptools wheel
+```
+
+5. Instalar dependencias de Python:
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Configurar variables de entorno:
+6. Configurar variables de entorno:
 ```bash
 cp .env.example .env
 # Editar .env con tus configuraciones específicas
 ```
 
-5. Ejecutar migraciones:
+7. Ejecutar migraciones:
 ```bash
 python manage.py migrate
 ```
 
-6. Crear un superusuario (opcional):
+8. Crear un superusuario (opcional):
 ```bash
 python manage.py createsuperuser
 ```
 
-7. Iniciar el servidor de desarrollo:
+9. Iniciar el servidor de desarrollo:
 ```bash
 python manage.py runserver
 ```
@@ -245,6 +271,29 @@ export AUTH_LDAP_USER_SEARCH_BASE=DC=example,DC=com
 ```
 
 **Nota:** Si el login tarda mucho tiempo (5-10+ segundos), puede ser un problema de conectividad con el servidor LDAP. Ver la sección de troubleshooting en [ACTIVE_DIRECTORY_SETUP.md](backend/ACTIVE_DIRECTORY_SETUP.md#slow-login--login-takes-too-long) para ajustar el timeout o deshabilitar LDAP temporalmente.
+
+## 🔧 Solución de Problemas
+
+### Error al instalar dependencias de Python
+
+Si encuentras errores al ejecutar `pip install -r requirements.txt`, como:
+- `error: command 'gcc-12' failed: No such file or directory`
+- `fatal error: lber.h: No such file or directory`
+- `ERROR: Failed building wheel for Pillow` o `python-ldap`
+
+**Solución**: Necesitas instalar las bibliotecas de desarrollo del sistema. Ver la guía completa de solución de problemas en [backend/SETUP.md](backend/SETUP.md)
+
+**Solución rápida (Ubuntu/Debian)**:
+```bash
+cd backend
+./setup_dependencies.sh
+```
+
+### Python 3.14+ no recomendado
+
+Si estás usando Python 3.14 o superior, es posible que encuentres problemas porque muchos paquetes no tienen wheels pre-compilados para esta versión.
+
+**Recomendación**: Usa Python 3.10, 3.11, o 3.12 para mejor compatibilidad.
 
 ## 📝 Características
 
