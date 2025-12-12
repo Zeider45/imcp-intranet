@@ -10,7 +10,11 @@ export interface DashboardData {
 }
 
 export async function getDashboardData(): Promise<DashboardData> {
-  const cookieHeader = cookies().toString();
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore
+    .getAll()
+    .map((c: any) => `${c.name}=${c.value}`)
+    .join("; ");
 
   const employeesReq = fetch(`${API_BASE_URL}/api/metrics/active-employees/`);
   const docsReq = fetch(`${API_BASE_URL}/api/metrics/documents-count/`);
