@@ -281,12 +281,12 @@ def current_user(request):
 def active_employees_count(request):
     """
     Returns the count of active employees that belong to the
-    'GG_INTRANET_TODOS_USUARIOS' group. If the group doesn't exist,
+    'GG_IMCPNET_TODOS_USUARIOS' group. If the group doesn't exist,
     the count will be 0.
 
     Response shape: { "count": number }
     """
-    group_name = 'GG_INTRANET_TODOS_USUARIOS'
+    group_name = 'GG_IMCPNET_TODOS_USUARIOS'
     now = timezone.now()
     try:
         group = Group.objects.get(name=group_name)
@@ -322,7 +322,6 @@ def active_employees_count(request):
         diff = current_count - previous_count
         percent_change = round((diff / previous_count) * 100.0, 2)
         is_positive = diff > 0
-
     return Response({
         'count': current_count,
         'previous_count': previous_count,
