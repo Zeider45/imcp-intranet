@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User, Group
 from django_filters.rest_framework import DjangoFilterBackend
 import logging
+from django.utils import timezone
 from .permissions import (
     IsAdminOrReadOnly,
     IsDepartmentManager,
@@ -128,11 +129,10 @@ def ldap_login(request):
         
         # Get or create auth token
         token, _ = Token.objects.get_or_create(user=user)
-        
-        # Get user groups for role-based authorization
+
+        # Build response payload
         user_groups = list(user.groups.values_list('name', flat=True))
-        
-        return Response({
+        response_payload = {
             'success': True,
             'message': 'Authentication successful',
             'user': {
@@ -145,8 +145,25 @@ def ldap_login(request):
                 'is_superuser': user.is_superuser,
                 'groups': user_groups,
             },
-            'token': token.key,
-        }, status=status.HTTP_200_OK)
+        }
+
+        # Prepare DRF Response so we can set cookie headers
+        response = Response(response_payload, status=status.HTTP_200_OK)
+
+        # Set HttpOnly cookie for the token. Use secure flag when configured.
+        import os
+        secure = os.environ.get('DJANGO_SECURE_COOKIE', '').lower() == 'true'
+        max_age = 14 * 24 * 60 * 60  # 14 days
+        response.set_cookie(
+            key='auth_token',
+            value=token.key,
+            httponly=True,
+            secure=secure,
+            samesite='Lax',
+            max_age=max_age,
+        )
+
+        return response
     else:
         # Authentication failed
         logger.warning(f"Authentication failed for user: {username}")
@@ -169,10 +186,13 @@ def ldap_logout(request):
             pass
         
         logout(request)
-        return Response({
+        # Also clear auth_token cookie if present
+        response = Response({
             'success': True,
             'message': 'Logout successful'
         }, status=status.HTTP_200_OK)
+        response.delete_cookie('auth_token')
+        return response
     else:
         return Response(
             {'error': 'No active session'},
@@ -185,28 +205,37 @@ def current_user(request):
     """
     Get current authenticated user information
     """
+    # If user is authenticated via session, return that
     if request.user.is_authenticated:
-        # Get user groups for role-based authorization
-        user_groups = list(request.user.groups.values_list('name', flat=True))
-        
+        user = request.user
+    else:
+        # Try to authenticate via token in HttpOnly cookie
+        token_key = request.COOKIES.get('auth_token')
+        user = None
+        if token_key:
+            try:
+                token_obj = Token.objects.get(key=token_key)
+                user = token_obj.user
+            except Token.DoesNotExist:
+                user = None
+
+    if user:
+        user_groups = list(user.groups.values_list('name', flat=True))
         return Response({
             'authenticated': True,
             'user': {
-                'id': request.user.id,
-                'username': request.user.username,
-                'email': request.user.email,
-                'first_name': request.user.first_name,
-                'last_name': request.user.last_name,
-                'is_staff': request.user.is_staff,
-                'is_superuser': request.user.is_superuser,
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'is_staff': user.is_staff,
+                'is_superuser': user.is_superuser,
                 'groups': user_groups,
             },
         }, status=status.HTTP_200_OK)
-    else:
-        return Response(
-            {'authenticated': False},
-            status=status.HTTP_200_OK
-        )
+
+    return Response({'authenticated': False}, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -219,15 +248,65 @@ def active_employees_count(request):
     Response shape: { "count": number }
     """
     group_name = 'GG_INTRANET_TODOS_USUARIOS'
+    now = timezone.now()
     try:
         group = Group.objects.get(name=group_name)
-        count = User.objects.filter(is_active=True, groups=group).count()
+        # Current active employees in the group
+        current_count = User.objects.filter(is_active=True, groups=group).count()
+
+        # Calculate end of previous month: first day of this month minus 1 second
+        first_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        from datetime import timedelta
+        last_month_end = first_of_month - timedelta(seconds=1)
+
+        # Approximate previous month's active employees by counting users
+        # who had joined on or before the end of last month and belong to the group.
+        # Note: if users were deactivated after joining, historic active status is not tracked
+        # in this schema; this is a reasonable approximation.
+        previous_count = User.objects.filter(groups=group, is_active=True, date_joined__lte=last_month_end).count()
     except Group.DoesNotExist:
+        current_count = 0
+        previous_count = 0
+
+    # Compute percent change and whether it's positive
+    percent_change = None
+    is_positive = None
+    if previous_count == 0:
+        if current_count == 0:
+            percent_change = 0.0
+            is_positive = False
+        else:
+            # From 0 to some number -> treat as 100% increase
+            percent_change = 100.0
+            is_positive = True
+    else:
+        diff = current_count - previous_count
+        percent_change = round((diff / previous_count) * 100.0, 2)
+        is_positive = diff > 0
+
+    return Response({
+        'count': current_count,
+        'previous_count': previous_count,
+        'percent_change': percent_change,
+        'is_positive': is_positive,
+        'group': group_name,
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def documents_count(request):
+    """
+    Returns the total count of library documents.
+
+    Response shape: { "count": number }
+    """
+    try:
+        count = LibraryDocument.objects.count()
+    except Exception:
         count = 0
 
     return Response({
         'count': count,
-        'group': group_name,
     }, status=status.HTTP_200_OK)
 
 

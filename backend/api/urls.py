@@ -38,6 +38,7 @@ urlpatterns = [
     path('welcome/', views.welcome, name='welcome'),
     # Metrics
     path('metrics/active-employees/', views.active_employees_count, name='active_employees_count'),
+    path('metrics/documents-count/', views.documents_count, name='documents_count'),
     # Authentication endpoints
     path('auth/login/', views.ldap_login, name='ldap_login'),
     path('auth/logout/', views.ldap_logout, name='ldap_logout'),

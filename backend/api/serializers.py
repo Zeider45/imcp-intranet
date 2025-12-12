@@ -30,14 +30,19 @@ class DepartmentSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for User model"""
     full_name = serializers.SerializerMethodField()
+    groups = serializers.SerializerMethodField()
     
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'full_name', 'is_active', 'date_joined']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'full_name', 'is_active', 'date_joined', 'groups']
         read_only_fields = ['date_joined']
     
     def get_full_name(self, obj):
         return obj.get_full_name() or obj.username
+
+    def get_groups(self, obj):
+        # Return list of group names the user belongs to
+        return list(obj.groups.values_list('name', flat=True))
 
 
 # ========================================

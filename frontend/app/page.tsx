@@ -13,23 +13,33 @@ import {
   Clock,
 } from "lucide-react";
 import { metricsApi } from "@/lib/api";
+import UserGreeting from "@/components/user-greeting";
+import { getDashboardData } from "@/lib/server/dashboard";
 
 export default async function DashboardPage() {
-  // Fetch active employees count from backend
-  const { data, error } = await metricsApi.getActiveEmployeesCount();
-  const activeEmployees = data?.count ?? 0;
+  const {
+    activeEmployeesCount,
+    activeEmployeesPercentChange,
+    activeEmployeesIsPositive,
+    documentsCount,
+    userGroups,
+  } = await getDashboardData();
+
+  const activeEmployees = activeEmployeesCount;
+  const activeEmployeesTrend = {
+    value: activeEmployeesPercentChange ?? 0,
+    isPositive: activeEmployeesIsPositive ?? false,
+  };
+
+  const documentsCountFormatted =
+    typeof documentsCount === "number"
+      ? documentsCount.toLocaleString()
+      : documentsCount;
 
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">
-          Bienvenido de nuevo, Juan
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Aquí está un resumen de tu actividad hoy
-        </p>
-      </div>
+      <UserGreeting />
 
       {/* Stats Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -37,13 +47,13 @@ export default async function DashboardPage() {
           title="Empleados Activos"
           value={activeEmployees}
           icon={Users}
-          trend={{ value: 12, isPositive: true }}
+          trend={activeEmployeesTrend}
         />
         <StatCard
           title="Documentos Compartidos"
-          value="1,429"
+          value={documentsCountFormatted}
           icon={FileText}
-          description="Este mes"
+          description="Totales"
         />
         <StatCard
           title="Eventos Próximos"
@@ -73,7 +83,7 @@ export default async function DashboardPage() {
             title="Subir Documento"
             description="Agregar nuevo documento a la biblioteca"
             icon={Send}
-            href="/library-documents"
+            href="/library-documents/admin"
           />
           <QuickActionCard
             title="Explorar Cursos"

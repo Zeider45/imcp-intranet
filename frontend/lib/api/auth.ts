@@ -30,7 +30,6 @@ export interface LoginResponse {
   message: string;
   user: AuthUser;
   profile: AuthUserProfile | null;
-  token: string;
 }
 
 export interface CurrentUserResponse {
@@ -48,10 +47,13 @@ export const authApi = {
   /**
    * Login with username and password
    */
-  async login(credentials: LoginCredentials): Promise<ApiResponse<LoginResponse>> {
+  async login(
+    credentials: LoginCredentials
+  ): Promise<ApiResponse<LoginResponse>> {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/login/`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -69,7 +71,8 @@ export const authApi = {
       return { data };
     } catch (error) {
       return {
-        error: error instanceof Error ? error.message : "Unknown error occurred",
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   },
@@ -77,13 +80,13 @@ export const authApi = {
   /**
    * Logout current user
    */
-  async logout(token: string): Promise<ApiResponse<LogoutResponse>> {
+  async logout(): Promise<ApiResponse<LogoutResponse>> {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/logout/`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Token ${token}`,
         },
       });
 
@@ -98,7 +101,8 @@ export const authApi = {
       return { data };
     } catch (error) {
       return {
-        error: error instanceof Error ? error.message : "Unknown error occurred",
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   },
@@ -106,13 +110,13 @@ export const authApi = {
   /**
    * Get current authenticated user
    */
-  async getCurrentUser(token: string): Promise<ApiResponse<CurrentUserResponse>> {
+  async getCurrentUser(): Promise<ApiResponse<CurrentUserResponse>> {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/me/`, {
         method: "GET",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Token ${token}`,
         },
       });
 
@@ -124,7 +128,8 @@ export const authApi = {
       return { data };
     } catch (error) {
       return {
-        error: error instanceof Error ? error.message : "Unknown error occurred",
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   },
