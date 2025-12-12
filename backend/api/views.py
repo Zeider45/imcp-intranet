@@ -8,6 +8,7 @@ from django.contrib.auth.models import User, Group
 from django_filters.rest_framework import DjangoFilterBackend
 import logging
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from .permissions import (
     IsAdminOrReadOnly,
     IsDepartmentManager,
@@ -173,31 +174,49 @@ def ldap_login(request):
         )
 
 
+@csrf_exempt
 @api_view(['POST'])
 def ldap_logout(request):
     """
     Logout current user
     """
+    # Attempt to remove any server-side token and session, and always clear the cookie
+    token_deleted = False
+
+    # If the user is authenticated via session, remove their token and logout
     if request.user.is_authenticated:
-        # Delete auth token if exists
         try:
             request.user.auth_token.delete()
+            token_deleted = True
         except Exception:
+            # ignore if no token or deletion fails
             pass
-        
+
+        # Terminate the session
         logout(request)
-        # Also clear auth_token cookie if present
-        response = Response({
-            'success': True,
-            'message': 'Logout successful'
-        }, status=status.HTTP_200_OK)
-        response.delete_cookie('auth_token')
-        return response
-    else:
-        return Response(
-            {'error': 'No active session'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+
+    # If not authenticated via session, try to delete token referenced in the HttpOnly cookie
+    # This handles clients that authenticate solely via the cookie token (no session)
+    token_key = request.COOKIES.get('auth_token')
+    if token_key:
+        try:
+            token_obj = Token.objects.filter(key=token_key).first()
+            if token_obj:
+                token_obj.delete()
+                token_deleted = True
+        except Exception:
+            # ignore any errors deleting token
+            pass
+
+    # Always return success and ensure the cookie is removed on the client
+    response = Response({
+        'success': True,
+        'message': 'Logout successful',
+        'token_deleted': token_deleted,
+    }, status=status.HTTP_200_OK)
+    # Remove cookie from client
+    response.delete_cookie('auth_token')
+    return response
 
 
 @api_view(['GET'])
