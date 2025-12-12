@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -145,6 +145,25 @@ class AuthenticationEndpointsTest(TestCase):
         response = self.client.post('/api/auth/logout/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['success'])
+    
+    def test_logout_without_csrf_token(self):
+        """Test logout works without CSRF token (should not return 403)"""
+        # Use Django's test client to simulate a real HTTP request without CSRF token
+        django_client = Client(enforce_csrf_checks=True)
+        
+        # Login first
+        django_client.force_login(self.user)
+        
+        # Try to logout without CSRF token - should succeed (no 403)
+        response = django_client.post(
+            '/api/auth/logout/',
+            content_type='application/json'
+        )
+        
+        # Should succeed without CSRF token
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertTrue(data['success'])
 
 
 class APIEndpointsTest(TestCase):

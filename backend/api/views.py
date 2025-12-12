@@ -187,13 +187,14 @@ def ldap_login(request):
         )
 
 
-@csrf_exempt
 @api_view(['POST'])
-@authentication_classes([])
+@authentication_classes([])  # Bypass CSRF validation
 @permission_classes([AllowAny])
 def ldap_logout(request):
     """
-    Logout current user
+    Logout current user.
+    
+    Uses @authentication_classes([]) to bypass CSRF checks by removing SessionAuthentication.
     """
     # Attempt to remove any server-side token and session, and always clear the cookie
     token_deleted = False
