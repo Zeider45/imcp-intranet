@@ -1,4 +1,4 @@
-from rest_framework.decorators import api_view, action
+from rest_framework.decorators import api_view, action, authentication_classes, permission_classes
 from rest_framework.response import Response
 from rest_framework import status, viewsets, filters
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -189,6 +189,8 @@ def ldap_login(request):
 
 @csrf_exempt
 @api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
 def ldap_logout(request):
     """
     Logout current user
