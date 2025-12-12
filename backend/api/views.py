@@ -231,7 +231,11 @@ def ldap_logout(request):
         'token_deleted': token_deleted,
     }, status=status.HTTP_200_OK)
     # Remove cookie from client
+    # Delete auth token cookie and also session and CSRF cookies so client is fully logged out
     response.delete_cookie('auth_token')
+    response.delete_cookie('sessionid')
+    # csrftoken may be stored non-HttpOnly (for forms); remove it as well to avoid leftover auth state
+    response.delete_cookie('csrftoken')
     return response
 
 
