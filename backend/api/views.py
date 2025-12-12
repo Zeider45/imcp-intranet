@@ -8,6 +8,7 @@ from django.contrib.auth.models import User, Group
 from django_filters.rest_framework import DjangoFilterBackend
 import logging
 from django.utils import timezone
+from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from .permissions import (
     IsAdminOrReadOnly,
@@ -151,16 +152,28 @@ def ldap_login(request):
         # Prepare DRF Response so we can set cookie headers
         response = Response(response_payload, status=status.HTTP_200_OK)
 
-        # Set HttpOnly cookie for the token. Use secure flag when configured.
+        # Set HttpOnly cookie for the token. Use secure flag and samesite from env or settings.
         import os
+        # secure flag controlled by DJANGO_SECURE_COOKIE env var (default False)
         secure = os.environ.get('DJANGO_SECURE_COOKIE', '').lower() == 'true'
+        # Determine samesite: prefer explicit env var, then settings.AUTH_COOKIE_SAMESITE, then fallback
+        cookie_samesite = os.environ.get('AUTH_COOKIE_SAMESITE') or getattr(settings, 'AUTH_COOKIE_SAMESITE', None) or 'Lax'
+
+        # For development, if DEBUG and no explicit env var provided, prefer a permissive value
+        # so the cookie can be sent from localhost:3000 to localhost:8000 during local testing.
+        if getattr(settings, 'DEBUG', False) and not os.environ.get('AUTH_COOKIE_SAMESITE'):
+            # Note: Some browsers require Secure when SameSite=None. If you test over HTTP,
+            # set DJANGO_SECURE_COOKIE=true or serve frontend/backend via HTTPS.
+            cookie_samesite = os.environ.get('AUTH_COOKIE_SAMESITE', 'None')
+            # Keep secure as configured by env var (default False in dev)
+
         max_age = 14 * 24 * 60 * 60  # 14 days
         response.set_cookie(
             key='auth_token',
             value=token.key,
             httponly=True,
             secure=secure,
-            samesite='Lax',
+            samesite=cookie_samesite,
             max_age=max_age,
         )
 

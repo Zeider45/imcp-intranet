@@ -163,6 +163,17 @@ CORS_ALLOWED_ORIGINS = os.environ.get(
 
 CORS_ALLOW_CREDENTIALS = True
 
+# Trusted origins for CSRF (useful when frontend runs on a different origin)
+# Accept a CSV in env var CSRF_TRUSTED_ORIGINS or default to common local dev hosts
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    'CSRF_TRUSTED_ORIGINS',
+    'http://localhost:3000,http://127.0.0.1:3000'
+).split(',')
+
+# Allow configuring cookie SameSite behavior via env var; default keeps Lax in prod
+# For development you may set AUTH_COOKIE_SAMESITE=None and DJANGO_SECURE_COOKIE=false
+AUTH_COOKIE_SAMESITE = os.environ.get('AUTH_COOKIE_SAMESITE', 'Lax')
+
 # REST Framework settings
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
