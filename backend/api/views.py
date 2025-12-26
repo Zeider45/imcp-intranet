@@ -335,15 +335,17 @@ def active_employees_count(request):
 @api_view(['GET'])
 def documents_count(request):
     """
-    Returns the count of library documents accessible to the user.
+    Returns the count of published library documents accessible to the user.
     Filters by user groups - users can only see documents that:
+    - Are published, AND
     - Have no groups assigned (accessible to all), OR
     - Have at least one group in common with the user's groups
 
     Response shape: { "count": number }
     """
     try:
-        queryset = LibraryDocument.objects.all()
+        # Only count published documents
+        queryset = LibraryDocument.objects.filter(status='published')
         
         # If user is authenticated, filter by groups
         if request.user.is_authenticated:
