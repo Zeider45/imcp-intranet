@@ -1,5 +1,5 @@
 from django.test import TestCase, Client
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from rest_framework.test import APIClient
 from rest_framework import status
 from api.models import Department, LibraryDocument
@@ -331,3 +331,178 @@ class LibraryDocumentEndpointsTest(TestCase):
         )
         response = self.client.get('/api/library-documents/published/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class LibraryDocumentGroupFilteringTest(TestCase):
+    """Test cases for group-based document filtering"""
+    
+    def setUp(self):
+        self.client = APIClient()
+        
+        # Create groups
+        self.group_hr = Group.objects.create(name='HR_Managers')
+        self.group_it = Group.objects.create(name='IT_Department')
+        
+        # Create users
+        self.user_hr = User.objects.create_user(
+            username="hr_user",
+            email="hr@example.com",
+            password="testpass123"
+        )
+        self.user_hr.groups.add(self.group_hr)
+        
+        self.user_it = User.objects.create_user(
+            username="it_user",
+            email="it@example.com",
+            password="testpass123"
+        )
+        self.user_it.groups.add(self.group_it)
+        
+        self.user_no_groups = User.objects.create_user(
+            username="no_group_user",
+            email="nogroup@example.com",
+            password="testpass123"
+        )
+        
+        # Create documents
+        self.doc_public = LibraryDocument.objects.create(
+            title="Public Document",
+            code="DOC-PUBLIC-001",
+            content="Available to everyone",
+            document_type="manual",
+            author=self.user_hr,
+            status="published"
+        )
+        # No groups assigned - accessible to all
+        
+        self.doc_hr = LibraryDocument.objects.create(
+            title="HR Document",
+            code="DOC-HR-001",
+            content="Only for HR",
+            document_type="policy",
+            author=self.user_hr,
+            status="published"
+        )
+        self.doc_hr.groups.add(self.group_hr)
+        
+        self.doc_it = LibraryDocument.objects.create(
+            title="IT Document",
+            code="DOC-IT-001",
+            content="Only for IT",
+            document_type="manual",
+            author=self.user_it,
+            status="published"
+        )
+        self.doc_it.groups.add(self.group_it)
+        
+        self.doc_both = LibraryDocument.objects.create(
+            title="HR and IT Document",
+            code="DOC-BOTH-001",
+            content="For HR and IT",
+            document_type="guide",
+            author=self.user_hr,
+            status="published"
+        )
+        self.doc_both.groups.add(self.group_hr, self.group_it)
+    
+    def test_hr_user_sees_correct_documents(self):
+        """Test HR user can see public, HR, and shared documents"""
+        self.client.force_authenticate(user=self.user_hr)
+        response = self.client.get('/api/library-documents/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # HR user should see: public, HR-only, and HR+IT documents
+        doc_codes = [doc['code'] for doc in response.data['results']]
+        self.assertIn('DOC-PUBLIC-001', doc_codes)
+        self.assertIn('DOC-HR-001', doc_codes)
+        self.assertIn('DOC-BOTH-001', doc_codes)
+        self.assertNotIn('DOC-IT-001', doc_codes)  # Should not see IT-only
+    
+    def test_it_user_sees_correct_documents(self):
+        """Test IT user can see public, IT, and shared documents"""
+        self.client.force_authenticate(user=self.user_it)
+        response = self.client.get('/api/library-documents/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # IT user should see: public, IT-only, and HR+IT documents
+        doc_codes = [doc['code'] for doc in response.data['results']]
+        self.assertIn('DOC-PUBLIC-001', doc_codes)
+        self.assertIn('DOC-IT-001', doc_codes)
+        self.assertIn('DOC-BOTH-001', doc_codes)
+        self.assertNotIn('DOC-HR-001', doc_codes)  # Should not see HR-only
+    
+    def test_user_no_groups_sees_only_public(self):
+        """Test user with no groups can only see public documents"""
+        self.client.force_authenticate(user=self.user_no_groups)
+        response = self.client.get('/api/library-documents/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # User with no groups should only see public documents
+        doc_codes = [doc['code'] for doc in response.data['results']]
+        self.assertIn('DOC-PUBLIC-001', doc_codes)
+        self.assertNotIn('DOC-HR-001', doc_codes)
+        self.assertNotIn('DOC-IT-001', doc_codes)
+        self.assertNotIn('DOC-BOTH-001', doc_codes)
+    
+    def test_unauthenticated_user_sees_only_public(self):
+        """Test unauthenticated user can only see public documents"""
+        # No authentication
+        response = self.client.get('/api/library-documents/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Unauthenticated user should only see public documents
+        doc_codes = [doc['code'] for doc in response.data['results']]
+        self.assertIn('DOC-PUBLIC-001', doc_codes)
+        self.assertNotIn('DOC-HR-001', doc_codes)
+        self.assertNotIn('DOC-IT-001', doc_codes)
+        self.assertNotIn('DOC-BOTH-001', doc_codes)
+    
+    def test_documents_count_filtered_by_groups(self):
+        """Test documents count endpoint filters by user groups"""
+        # HR user
+        self.client.force_authenticate(user=self.user_hr)
+        response = self.client.get('/api/metrics/documents-count/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 3)  # Public, HR, and Both
+        
+        # IT user
+        self.client.force_authenticate(user=self.user_it)
+        response = self.client.get('/api/metrics/documents-count/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 3)  # Public, IT, and Both
+        
+        # User with no groups
+        self.client.force_authenticate(user=self.user_no_groups)
+        response = self.client.get('/api/metrics/documents-count/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)  # Only Public
+        
+        # Unauthenticated user
+        self.client.force_authenticate(user=None)
+        response = self.client.get('/api/metrics/documents-count/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)  # Only Public
+    
+    def test_published_endpoint_filtered_by_groups(self):
+        """Test published endpoint filters by user groups"""
+        # HR user
+        self.client.force_authenticate(user=self.user_hr)
+        response = self.client.get('/api/library-documents/published/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        doc_codes = [doc['code'] for doc in response.data['results']]
+        self.assertIn('DOC-PUBLIC-001', doc_codes)
+        self.assertIn('DOC-HR-001', doc_codes)
+        self.assertIn('DOC-BOTH-001', doc_codes)
+        self.assertNotIn('DOC-IT-001', doc_codes)
+    
+    def test_recent_endpoint_filtered_by_groups(self):
+        """Test recent endpoint filters by user groups"""
+        # IT user
+        self.client.force_authenticate(user=self.user_it)
+        response = self.client.get('/api/library-documents/recent/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        doc_codes = [doc['code'] for doc in response.data]
+        self.assertIn('DOC-PUBLIC-001', doc_codes)
+        self.assertIn('DOC-IT-001', doc_codes)
+        self.assertIn('DOC-BOTH-001', doc_codes)
+        self.assertNotIn('DOC-HR-001', doc_codes)

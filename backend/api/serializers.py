@@ -59,12 +59,13 @@ class LibraryDocumentSerializer(serializers.ModelSerializer):
     approver_name = serializers.CharField(source='approver.get_full_name', read_only=True)
     file_name = serializers.SerializerMethodField()
     file_size = serializers.SerializerMethodField()
+    group_names = serializers.SerializerMethodField()
     
     class Meta:
         model = LibraryDocument
         fields = ['id', 'title', 'code', 'description', 'content', 'document_type',
                   'version', 'file', 'file_name', 'file_size', 'department', 'department_name',
-                  'tags', 'author', 'author_name', 'status', 'submitted_at',
+                  'tags', 'groups', 'group_names', 'author', 'author_name', 'status', 'submitted_at',
                   'approver', 'approver_name', 'approval_decision', 'approval_observations',
                   'corrections_required', 'rejection_reason', 'approved_at',
                   'download_count', 'view_count', 'created_at', 'updated_at']
@@ -82,6 +83,10 @@ class LibraryDocumentSerializer(serializers.ModelSerializer):
             except Exception:
                 return None
         return None
+    
+    def get_group_names(self, obj):
+        """Return list of group names for this document"""
+        return list(obj.groups.values_list('name', flat=True))
 
 
 class PolicySerializer(serializers.ModelSerializer):

@@ -67,6 +67,8 @@ export interface LibraryDocument {
   department: number | null;
   department_name: string;
   tags: string;
+  groups: number[];
+  group_names: string[];
   author: number;
   author_name: string;
   status:

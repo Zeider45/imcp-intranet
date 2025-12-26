@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.core.validators import FileExtensionValidator
 from django.utils import timezone
 
@@ -71,6 +71,7 @@ class LibraryDocument(models.Model):
     # Organization
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name='library_documents')
     tags = models.CharField(max_length=500, blank=True, verbose_name="Etiquetas (separadas por coma)")
+    groups = models.ManyToManyField(Group, blank=True, related_name='library_documents', verbose_name="Grupos con Acceso")
     
     # Authorship
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='authored_library_documents', verbose_name="Autor")

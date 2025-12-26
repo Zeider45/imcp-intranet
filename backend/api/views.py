@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User, Group
+from django.db.models import Q, Count
 from django_filters.rest_framework import DjangoFilterBackend
 import logging
 from django.utils import timezone
@@ -334,12 +335,32 @@ def active_employees_count(request):
 @api_view(['GET'])
 def documents_count(request):
     """
-    Returns the total count of library documents.
+    Returns the count of library documents accessible to the user.
+    Filters by user groups - users can only see documents that:
+    - Have no groups assigned (accessible to all), OR
+    - Have at least one group in common with the user's groups
 
     Response shape: { "count": number }
     """
     try:
-        count = LibraryDocument.objects.count()
+        queryset = LibraryDocument.objects.all()
+        
+        # If user is authenticated, filter by groups
+        if request.user.is_authenticated:
+            user_groups = request.user.groups.all()
+            # Include documents with no groups OR documents where user belongs to at least one group
+            queryset = queryset.annotate(
+                groups_count=Count('groups')
+            ).filter(
+                Q(groups_count=0) | Q(groups__in=user_groups)
+            ).distinct()
+        else:
+            # Unauthenticated users can only see documents with no groups
+            queryset = queryset.annotate(
+                groups_count=Count('groups')
+            ).filter(groups_count=0)
+        
+        count = queryset.count()
     except Exception:
         count = 0
 
@@ -378,13 +399,39 @@ class LibraryDocumentViewSet(viewsets.ModelViewSet):
     In production, set the LIBRARY_DOCS_PRODUCTION environment variable to 'true'
     to enable proper permission checking (CanManageDocuments).
     """
-    queryset = LibraryDocument.objects.select_related('department', 'author', 'approver').all()
+    queryset = LibraryDocument.objects.select_related('department', 'author', 'approver').prefetch_related('groups').all()
     serializer_class = LibraryDocumentSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['document_type', 'status', 'department', 'author', 'approval_decision']
     search_fields = ['title', 'code', 'description', 'content', 'tags']
     ordering_fields = ['code', 'title', 'created_at', 'updated_at', 'download_count', 'view_count']
     ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """
+        Filter documents based on user groups.
+        Users can only see documents that:
+        - Have no groups assigned (accessible to all), OR
+        - Have at least one group in common with the user's groups
+        """
+        queryset = super().get_queryset()
+        
+        # If user is authenticated, filter by groups
+        if self.request.user.is_authenticated:
+            user_groups = self.request.user.groups.all()
+            # Include documents with no groups OR documents where user belongs to at least one group
+            queryset = queryset.annotate(
+                groups_count=Count('groups')
+            ).filter(
+                Q(groups_count=0) | Q(groups__in=user_groups)
+            ).distinct()
+        else:
+            # Unauthenticated users can only see documents with no groups
+            queryset = queryset.annotate(
+                groups_count=Count('groups')
+            ).filter(groups_count=0)
+        
+        return queryset
     
     def get_permissions(self):
         """
@@ -400,7 +447,7 @@ class LibraryDocumentViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def published(self, request):
         """Get published documents available for viewing/downloading"""
-        published_docs = self.queryset.filter(status='published')
+        published_docs = self.get_queryset().filter(status='published')
         page = self.paginate_queryset(published_docs)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -412,7 +459,7 @@ class LibraryDocumentViewSet(viewsets.ModelViewSet):
     def my_documents(self, request):
         """Get documents authored by current user"""
         if request.user.is_authenticated:
-            my_docs = self.queryset.filter(author=request.user)
+            my_docs = self.get_queryset().filter(author=request.user)
             page = self.paginate_queryset(my_docs)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
@@ -424,7 +471,7 @@ class LibraryDocumentViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def pending_approval(self, request):
         """Get documents pending approval"""
-        pending = self.queryset.filter(status='pending_approval')
+        pending = self.get_queryset().filter(status='pending_approval')
         page = self.paginate_queryset(pending)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -435,7 +482,7 @@ class LibraryDocumentViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def recent(self, request):
         """Get recent documents (last 10)"""
-        recent_docs = self.queryset.filter(status='published').order_by('-created_at')[:10]
+        recent_docs = self.get_queryset().filter(status='published').order_by('-created_at')[:10]
         serializer = self.get_serializer(recent_docs, many=True)
         return Response(serializer.data)
     
