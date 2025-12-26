@@ -29,15 +29,16 @@ class LibraryDocumentAdmin(admin.ModelAdmin):
     """Admin interface for LibraryDocument model - Biblioteca de Documentos Unificada"""
     list_display = ['code', 'title', 'document_type', 'status', 'department', 'author', 'approval_decision']
     search_fields = ['code', 'title', 'description', 'content', 'tags']
-    list_filter = ['document_type', 'status', 'department', 'approval_decision']
+    list_filter = ['document_type', 'status', 'department', 'approval_decision', 'groups']
     raw_id_fields = ['author', 'approver']
+    filter_horizontal = ['groups']
     ordering = ['-created_at']
     fieldsets = (
         ('Información Básica', {
             'fields': ('title', 'code', 'description', 'content', 'document_type', 'version')
         }),
         ('Archivo y Organización', {
-            'fields': ('file', 'department', 'tags')
+            'fields': ('file', 'department', 'tags', 'groups')
         }),
         ('Autoría', {
             'fields': ('author',)
