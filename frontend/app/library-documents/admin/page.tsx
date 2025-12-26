@@ -106,9 +106,14 @@ export default function LibraryDocumentsAdminPage() {
     if (searchTerm) params.search = searchTerm;
 
     const response = await libraryDocumentApi.list(params);
-    if (response.data) {
+    if (response.error) {
+      console.error('Error fetching documents:', response.error);
+      setDocuments([]);
+    } else if (response.data) {
       const results = (response.data as PaginatedResponse<LibraryDocument>).results || [];
       setDocuments(results);
+    } else {
+      setDocuments([]);
     }
     setLoading(false);
   }, [activeTab, filterType, searchTerm]);

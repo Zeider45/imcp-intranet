@@ -42,9 +42,14 @@ export default function LibraryDocumentsPage() {
     if (searchQuery) params.search = searchQuery;
 
     const response = await libraryDocumentApi.list(params);
-    if (response.data) {
+    if (response.error) {
+      console.error('Error fetching documents:', response.error);
+      setDocuments([]);
+    } else if (response.data) {
       const results = (response.data as PaginatedResponse<LibraryDocument>).results || [];
       setDocuments(results);
+    } else {
+      setDocuments([]);
     }
     setLoading(false);
   }, [selectedCategory, searchQuery]);
