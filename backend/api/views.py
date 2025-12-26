@@ -447,7 +447,7 @@ class LibraryDocumentViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def published(self, request):
         """Get published documents available for viewing/downloading"""
-        published_docs = self.queryset.filter(status='published')
+        published_docs = self.get_queryset().filter(status='published')
         page = self.paginate_queryset(published_docs)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -459,7 +459,7 @@ class LibraryDocumentViewSet(viewsets.ModelViewSet):
     def my_documents(self, request):
         """Get documents authored by current user"""
         if request.user.is_authenticated:
-            my_docs = self.queryset.filter(author=request.user)
+            my_docs = self.get_queryset().filter(author=request.user)
             page = self.paginate_queryset(my_docs)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
@@ -471,7 +471,7 @@ class LibraryDocumentViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def pending_approval(self, request):
         """Get documents pending approval"""
-        pending = self.queryset.filter(status='pending_approval')
+        pending = self.get_queryset().filter(status='pending_approval')
         page = self.paginate_queryset(pending)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -482,7 +482,7 @@ class LibraryDocumentViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def recent(self, request):
         """Get recent documents (last 10)"""
-        recent_docs = self.queryset.filter(status='published').order_by('-created_at')[:10]
+        recent_docs = self.get_queryset().filter(status='published').order_by('-created_at')[:10]
         serializer = self.get_serializer(recent_docs, many=True)
         return Response(serializer.data)
     

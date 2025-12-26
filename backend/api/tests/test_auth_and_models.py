@@ -482,3 +482,27 @@ class LibraryDocumentGroupFilteringTest(TestCase):
         response = self.client.get('/api/metrics/documents-count/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['count'], 1)  # Only Public
+    
+    def test_published_endpoint_filtered_by_groups(self):
+        """Test published endpoint filters by user groups"""
+        # HR user
+        self.client.force_authenticate(user=self.user_hr)
+        response = self.client.get('/api/library-documents/published/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        doc_codes = [doc['code'] for doc in response.data['results']]
+        self.assertIn('DOC-PUBLIC-001', doc_codes)
+        self.assertIn('DOC-HR-001', doc_codes)
+        self.assertIn('DOC-BOTH-001', doc_codes)
+        self.assertNotIn('DOC-IT-001', doc_codes)
+    
+    def test_recent_endpoint_filtered_by_groups(self):
+        """Test recent endpoint filters by user groups"""
+        # IT user
+        self.client.force_authenticate(user=self.user_it)
+        response = self.client.get('/api/library-documents/recent/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        doc_codes = [doc['code'] for doc in response.data]
+        self.assertIn('DOC-PUBLIC-001', doc_codes)
+        self.assertIn('DOC-IT-001', doc_codes)
+        self.assertIn('DOC-BOTH-001', doc_codes)
+        self.assertNotIn('DOC-HR-001', doc_codes)
