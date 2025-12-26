@@ -166,6 +166,21 @@ export default function LibraryDocumentsPage() {
                   <span>Descargas:</span>
                   <span>{doc.download_count || 0}</span>
                 </div>
+                {doc.group_names && doc.group_names.length > 0 && (
+                  <div className="pt-2 border-t border-border">
+                    <p className="text-xs text-muted-foreground mb-1">Grupos con acceso:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {doc.group_names.map((groupName, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                        >
+                          {groupName}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="flex gap-2">
                 <button

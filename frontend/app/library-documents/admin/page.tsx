@@ -276,6 +276,7 @@ export default function LibraryDocumentsAdminPage() {
                   <TableHead>Tipo</TableHead>
                   <TableHead>Versión</TableHead>
                   <TableHead>Estado</TableHead>
+                  <TableHead>Grupos</TableHead>
                   <TableHead>Fecha</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
@@ -291,6 +292,25 @@ export default function LibraryDocumentsAdminPage() {
                       <Badge variant={doc.status === 'published' ? 'default' : 'outline'}>
                         {statusLabels[doc.status] || doc.status}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {doc.group_names && doc.group_names.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {doc.group_names.slice(0, 2).map((groupName, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                            >
+                              {groupName}
+                            </span>
+                          ))}
+                          {doc.group_names.length > 2 && (
+                            <span className="text-xs text-muted-foreground">+{doc.group_names.length - 2}</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">Público</span>
+                      )}
                     </TableCell>
                     <TableCell>{new Date(doc.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
